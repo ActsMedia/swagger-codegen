@@ -11,7 +11,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KotlinMMMCodegen extends AbstractKotlinCodegen {
+public class KotlinSimpleCodegen extends AbstractKotlinCodegen {
 
     public static final String DATE_LIBRARY = "dateLibrary";
     protected CodegenConstants.ENUM_PROPERTY_NAMING_TYPE enumPropertyNaming = CodegenConstants.ENUM_PROPERTY_NAMING_TYPE.camelCase;
@@ -34,20 +34,20 @@ public class KotlinMMMCodegen extends AbstractKotlinCodegen {
     /**
      * Constructs an instance of `KotlinClientCodegen`.
      */
-    public KotlinMMMCodegen() {
+    public KotlinSimpleCodegen() {
         super();
 
-        artifactId = "kotlinmmm";
-        packageName = "com.mmm.mediaframework.Model.Swagger";
+        artifactId = "kotlinSimple";
+        packageName = "com.mmm.mediaframework.Swagger";
 
         outputFolder = "generated-code" + File.separator + "kotlinmmm";
         modelTemplateFiles.put("model.mustache", ".kt");
         apiTemplateFiles.put("api.mustache", ".kt");
         modelDocTemplateFiles.put("model_doc.mustache", ".md");
         apiDocTemplateFiles.put("api_doc.mustache", ".md");
-        embeddedTemplateDir = templateDir = "kotlinmmm";
+        embeddedTemplateDir = templateDir = "kotlinSimple";
         apiPackage = packageName + ".apis";
-        modelPackage = packageName + ".models";
+        modelPackage = packageName + ".model";
 
         CliOption dateLibrary = new CliOption(DATE_LIBRARY, "Option. Date library to use");
         Map<String, String> dateOptions = new HashMap<>();
@@ -63,7 +63,7 @@ public class KotlinMMMCodegen extends AbstractKotlinCodegen {
     }
 
     public String getName() {
-        return "kotlinMMM";
+        return "kotlinSimple";
     }
 
     public String getHelp() {

@@ -39,7 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
-public class SwiftMMMCodegen extends DefaultCodegen implements CodegenConfig {
+public class SwiftSimpleCodegen extends DefaultCodegen implements CodegenConfig {
     public static final String PROJECT_NAME = "projectName";
     public static final String RESPONSE_AS = "responseAs";
     public static final String UNWRAP_REQUIRED = "unwrapRequired";
@@ -75,7 +75,7 @@ public class SwiftMMMCodegen extends DefaultCodegen implements CodegenConfig {
     
     @Override
     public String getName() {
-        return "swiftMMM";
+        return "swiftSimple";
     }
     
     @Override
@@ -97,12 +97,12 @@ public class SwiftMMMCodegen extends DefaultCodegen implements CodegenConfig {
     /**
      * Constructor for the swift4 language codegen module.
      */
-    public SwiftMMMCodegen() {
+    public SwiftSimpleCodegen() {
         super();
         outputFolder = "generated-code" + File.separator + "swift";
         modelTemplateFiles.put("model.mustache", ".swift");
         apiTemplateFiles.put("api.mustache", ".swift");
-        embeddedTemplateDir = templateDir = "swiftmmm";
+        embeddedTemplateDir = templateDir = "swiftSimple";
         apiPackage = File.separator + "APIs";
         modelPackage = File.separator + "Models";
         
@@ -588,7 +588,7 @@ public class SwiftMMMCodegen extends DefaultCodegen implements CodegenConfig {
                 final CodegenModel parentCodegenModel = super.fromModel(codegenModel.parent,
                                                                         parentModel,
                                                                         allDefinitions);
-                codegenModel = SwiftMMMCodegen.reconcileProperties(codegenModel, parentCodegenModel);
+                codegenModel = SwiftSimpleCodegen.reconcileProperties(codegenModel, parentCodegenModel);
                 
                 // get the next parent
                 parentSchema = parentCodegenModel.parentSchema;

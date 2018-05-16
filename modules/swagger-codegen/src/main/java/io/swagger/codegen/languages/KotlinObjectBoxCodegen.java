@@ -116,13 +116,12 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         supportingFiles.add(new SupportingFile("infrastructure/Errors.kt.mustache", infrastructureFolder, "Errors.kt"));
     }
 
+    // overridden to post-process any model properties
     @Override
-    public CodegenProperty fromProperty(String name, Property p) {
+    public void postProcessModelProperty(CodegenModel model, CodegenProperty property){
 
-        CodegenProperty property = super.fromProperty(name, p);
         if (property == null) {
-            LOGGER.error("unexpected missing property for name " + name);
-            return null;
+            return;
         }
 
         // Check JSON for custom code

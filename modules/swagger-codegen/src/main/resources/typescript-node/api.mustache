@@ -141,16 +141,17 @@ export class {{classname}} {{#parent}}extends {{{parent}}} {{/parent}}{
     * {{{description}}}
     */
 {{/description}}
-    '{{name}}': {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{datatype}}}{{/isEnum}};
+    '{{name}}'{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{datatype}}}{{/isEnum}};
 {{/vars}}
 
     {{#discriminator}}
-    static discriminator = {{discriminator}};
+    static discriminator: string | undefined = "{{discriminator}}";
     {{/discriminator}}
     {{^discriminator}}
-    static discriminator = undefined;
+    static discriminator: string | undefined = undefined;
     {{/discriminator}}
 
+    {{^isArrayModel}}
     static attributeTypeMap: Array<{name: string, baseName: string, type: string}> = [
         {{#vars}}
         {
@@ -170,6 +171,7 @@ export class {{classname}} {{#parent}}extends {{{parent}}} {{/parent}}{
         return {{classname}}.attributeTypeMap;
         {{/parent}}
     }
+    {{/isArrayModel}}    
 }
 
 {{#hasEnums}}

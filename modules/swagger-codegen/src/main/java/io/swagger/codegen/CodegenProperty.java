@@ -63,36 +63,6 @@ public class CodegenProperty implements Cloneable {
     public String xmlNamespace;
     public boolean isXmlWrapped = false;
 
-    // DWS Additions
-
-    // Whether to index the property in the database
-    public Boolean isIndexed; // x-is-indexed
-
-    // Whether the attached object(s) is a reference to another table
-    public Boolean isForeignTableReferenceByUUID; // x-is-foreign-table-reference-by-uuid
-
-    // Whether this table should link to a core data table. For example, we typically only want linking in one direction. For example, employees might load after stores, so during the employee setup, we link to stores, but when building stores, we don't try to link to employees because they haven't been loaded yet.
-    public Boolean isCreateTableLinkMethods; // x-is-enable-table-link-methods
-
-    // Whether the reference is a single uuid (false) or contains an array (true). If it contains an array, the reference will be a "to many" relationship.
-    public Boolean isToManyReference; // x-is-to-many-reference
-
-    // The table/model name that the property relates to. For example "Category"
-    public String referencesPropertyName; // x-references-property-name
-
-    // The relation name for the referenced table (reference to Category object might be categories)
-    public String referencesRelationName; // x-references-relation-name
-
-    // The inverse relation for Core Data
-    public String referenceInverseName; // x-reference-inverse-name
-
-    // This property keeps tracks of whether the object has been soft-deleted on the server.
-    public Boolean isDeletedOnServerProperty; // x-is-deleted-on-server-property
-
-	// PJF Additions
-	//Ability to exclude something from auto-gen tests
-	public Boolean isExcludedFromTests; //x-exclude-from-tests
-
 
     @Override
     public String toString() {

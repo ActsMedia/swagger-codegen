@@ -1,17 +1,26 @@
 package io.swagger.codegen.languages;
 
+import io.swagger.codegen.CodegenModelFactory;
+import io.swagger.codegen.CodegenModelType;
+import io.swagger.codegen.CodegenParameter;
+import io.swagger.codegen.CodegenModel;
+import io.swagger.codegen.CodegenProperty;
 import io.swagger.codegen.CliOption;
 import io.swagger.codegen.CodegenConstants;
 import io.swagger.codegen.CodegenType;
 import io.swagger.codegen.SupportingFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.IOException;
 
 public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
+
+    
 
     public static final String DATE_LIBRARY = "dateLibrary";
     protected CodegenConstants.ENUM_PROPERTY_NAMING_TYPE enumPropertyNaming = CodegenConstants.ENUM_PROPERTY_NAMING_TYPE.camelCase;
@@ -56,6 +65,9 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         dateOptions.put(DateLibrary.JAVA8.value, "Java 8 native JSR310");
         dateLibrary.setEnum(dateOptions);
         cliOptions.add(dateLibrary);
+
+        CodegenModelFactory.setTypeMapping(CodegenModelType.PROPERTY, ObjectBoxProperty.class);
+        CodegenModelFactory.setTypeMapping(CodegenModelType.MODEL, ObjectBoxModel.class);
     }
 
     public CodegenType getTag() {
@@ -116,28 +128,106 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         supportingFiles.add(new SupportingFile("infrastructure/Errors.kt.mustache", infrastructureFolder, "Errors.kt"));
     }
 
-    // overridden to post-process any model properties
+    // overridden to post-process any model and property properties
     @Override
     public void postProcessModelProperty(CodegenModel model, CodegenProperty property){
 
-        if (property == null) {
+        if (property == null || !(property instanceof ObjectBoxProperty)) {
             return;
         }
+        ObjectBoxProperty typedProperty = (ObjectBoxProperty) property;
 
         // Check JSON for custom code
         try {
             ObjectMapper mapper = new ObjectMapper();
             Map<String,Object> jsonData = mapper.readValue(property.jsonSchema, Map.class);
 
-            property.isIndexed = (Boolean) jsonData.get("x-is-indexed");
-            property.isForeignTableReferenceByUUID = (Boolean) jsonData.get("x-is-foreign-table-reference-by-uuid");
-            property.isToManyReference = (Boolean) jsonData.get("x-is-to-many-reference");
-            property.isCreateTableLinkMethods = (Boolean) jsonData.get("x-is-enable-table-link-methods");
-            property.referencesPropertyName = (String) jsonData.get("x-references-property-name");
-            property.referencesRelationName = (String) jsonData.get("x-references-relation-name");
-            property.referenceInverseName = (String) jsonData.get("x-reference-inverse-name");
-            property.isDeletedOnServerProperty = (Boolean) jsonData.get("x-deleted-on-server-property");
-			property.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
+            typedProperty.isIndexed = (Boolean) jsonData.get("x-is-indexed");
+            typedProperty.isForeignTableReferenceByUUID = (Boolean) jsonData.get("x-is-foreign-table-reference-by-uuid");
+            typedProperty.isToManyReference = (Boolean) jsonData.get("x-is-to-many-reference");
+            typedProperty.isCreateTableLinkMethods = (Boolean) jsonData.get("x-is-enable-table-link-methods");
+            typedProperty.referencesPropertyName = (String) jsonData.get("x-references-property-name");
+            typedProperty.referencesRelationName = (String) jsonData.get("x-references-relation-name");
+            typedProperty.referenceInverseName = (String) jsonData.get("x-reference-inverse-name");
+            typedProperty.isDeletedOnServerProperty = (Boolean) jsonData.get("x-deleted-on-server-property");
+            typedProperty.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
+
         } catch (IOException e) {}
+    }
+
+    @Override
+    public void postProcessModel(CodegenModel model){
+        if (model == null || !(model instanceof ObjectBoxModel)) {
+            return;
+        }
+        ObjectBoxModel typedModel = (ObjectBoxModel) model;
+        
+        // Check JSON for custom code
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String,Object> jsonData = mapper.readValue(model.modelJson, Map.class);
+            
+			typedModel.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
+            typedModel.isInitRequired = (Boolean) jsonData.get("x-init-required");
+            typedModel.isBuildCoreData = (Boolean) jsonData.get("x-build-core-data");
+            typedModel.isProtocolUUIDType = (Boolean) jsonData.get("x-protocol-uuid-type");
+            typedModel.isProtocolSortOrderType = (Boolean) jsonData.get("x-protocol-sort-order-type");
+            typedModel.isProtocolNameType = (Boolean) jsonData.get("x-protocol-name-type");
+            typedModel.isProtocolSoftDeletableType = (Boolean) jsonData.get("x-protocol-soft-deleteable-type");
+
+        } catch (IOException e) {}
+    }
+
+    static public class ObjectBoxProperty extends CodegenProperty {
+        // DWS Additions
+
+        // Whether to index the property in the database
+        public Boolean isIndexed; // x-is-indexed
+
+        // Whether the attached object(s) is a reference to another table
+        public Boolean isForeignTableReferenceByUUID; // x-is-foreign-table-reference-by-uuid
+
+        // Whether this table should link to a core data table. For example, we typically only want linking in one direction. For example, employees might load after stores, so during the employee setup, we link to stores, but when building stores, we don't try to link to employees because they haven't been loaded yet.
+        public Boolean isCreateTableLinkMethods; // x-is-enable-table-link-methods
+
+        // Whether the reference is a single uuid (false) or contains an array (true). If it contains an array, the reference will be a "to many" relationship.
+        public Boolean isToManyReference; // x-is-to-many-reference
+
+        // The table/model name that the property relates to. For example "Category"
+        public String referencesPropertyName; // x-references-property-name
+
+        // The relation name for the referenced table (reference to Category object might be categories)
+        public String referencesRelationName; // x-references-relation-name
+
+        // The inverse relation for Core Data
+        public String referenceInverseName; // x-reference-inverse-name
+
+        // This property keeps tracks of whether the object has been soft-deleted on the server.
+        public Boolean isDeletedOnServerProperty; // x-is-deleted-on-server-property
+
+        // PJF Additions
+        //Ability to exclude something from auto-gen tests
+        public Boolean isExcludedFromTests; //x-exclude-from-tests
+    }
+    
+    static public class ObjectBoxModel extends CodegenModel {
+
+        // DWS Additions
+
+        // Builds a convenience initializer with required variables
+        public Boolean isInitRequired; // x-init-required
+
+        // Whether to automatically build the corresponding core-data model
+        // Requires that each model object conforms to UuidFindable
+        public Boolean isBuildCoreData; // x-build-core-data
+
+        // Protocols
+        public Boolean isProtocolUUIDType; // x-protocol-uuid-type
+        public Boolean isProtocolSortOrderType; // x-protocol-sort-order-type
+        public Boolean isProtocolNameType; // x-protocol-name-type
+        public Boolean isProtocolSoftDeletableType; // x-protocol-soft-deleteable-type
+
+        public Boolean isExcludedFromTests; //x-exclude-from-tests
+
     }
 }

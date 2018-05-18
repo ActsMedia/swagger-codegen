@@ -2,16 +2,16 @@
 /**
  * {{{description}}}
 {{#vars}}
- * @param {{name}} {{{description}}}
+ * @param {{nameInCamelCaseFirstLetterLower}} {{{description}}}
 {{/vars}}
  */
  @Entity
-data class {{databaseModelName}} (
+class {{databaseModelName}} (
 {{#vars}}{{#isListContainer}}{{#items}}{{#isString}}                @Convert(converter = StringListConverter::class, dbType = String::class)
 {{/isString}}{{/items}}{{/isListContainer}}{{#required}}{{>data_class_req_var}}{{/required}}{{^required}}{{>data_class_opt_var}}{{/required}}{{^-last}},
 {{/-last}}{{/vars}}{{#vars}}{{#databaseIsRelation}}{{^databaseRelationIsToManyReference}},
                 var {{databaseRelationPropertyName}}Id: Long = 0{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}},
-                @Id var id: Long = 0) {
+                @Id var id: Long = 0){{#isProtocolUUIDType}}: UUIDEntity(uuid){{/isProtocolUUIDType}}{{#isProtocolSoftDeletableType}}{{#isProtocolUUIDType}}, {{/isProtocolUUIDType}}{{^isProtocolUUIDType}}: {{/isProtocolUUIDType}}SoftDeletable{{/isProtocolSoftDeletableType}} {
     
     {{#vars}}{{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}
     @Backlink

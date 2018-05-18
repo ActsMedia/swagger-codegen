@@ -73,6 +73,14 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         instantiationTypes.put("array", "listOf");
         instantiationTypes.put("list", "listOf");
 
+
+        importMapping.put("StringListConverter", "com.mmm.thinbonding.Model.swagger.database.StringListConverter");
+        importMapping.put("SoftDeletable", "com.mmm.thinbonding.Model.swagger.database.SoftDeletable");
+        importMapping.put("UUIDEntity", "com.mmm.thinbonding.Model.swagger.database.UUIDEntity");
+        importMapping.put("annotations", "io.objectbox.annotation.*");
+        importMapping.put("ToMany", "io.objectbox.relation.ToMany");
+        importMapping.put("ToOne", "io.objectbox.relation.ToOne");
+        importMapping.put("SerializedName", "com.google.gson.annotations.SerializedName");
         
 
         CodegenModelFactory.setTypeMapping(CodegenModelType.PROPERTY, ObjectBoxProperty.class);
@@ -299,6 +307,10 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String,Object> jsonData = mapper.readValue(this.modelJson, Map.class);
                 
+                if(!jsonData.containsKey("x-database-model")) {
+                    //In this case the model won't even be generated, so exit
+                    return;
+                }
                 //Database
                 this.isDatabaseModel = (Boolean) jsonData.get("x-database-model");
                 this.databaseModelName = (String) jsonData.get("x-database-model-name");
@@ -314,7 +326,19 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
 
                 //Other
                 this.isInitRequired = (Boolean) jsonData.get("x-init-required");
+                
+                if(this.isProtocolSoftDeletableType) {
+                    imports.add("SoftDeletable");
+                }
+                if(this.isProtocolUUIDType) {
+                    imports.add("UUIDEntity");
+                }
 
+                imports.add("StringListConverter");
+                imports.add("annotations");
+                imports.add("ToMany");
+                imports.add("ToOne");
+                imports.add("SerializedName");
     
             } catch (IOException e) {}
         }

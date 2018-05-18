@@ -3,14 +3,11 @@ package {{modelPackage}}
 
 {{#imports}}import {{import}}
 {{/imports}}
-import com.mmm.thinbonding.Model.swagger.database.StringListConverter
-import io.objectbox.annotation.*
-import io.objectbox.relation.ToMany
-import io.objectbox.relation.ToOne
-import com.google.gson.annotations.SerializedName
+
+
 
 {{#models}}
 {{#model}}
-{{#isDatabaseModel}}{{>object_box_data_class}}{{/isDatabaseModel}}
+{{#isDatabaseModel}}{{>object_box_class}}{{/isDatabaseModel}}
 {{/model}}
 {{/models}}

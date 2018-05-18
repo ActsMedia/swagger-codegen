@@ -2,4 +2,4 @@
                 /* {{{description}}} */
 {{/description}}
                 @SerializedName("{{name}}")
-                var {{{nameInCamelCaseFirstLetterLower}}}: {{#isEnum}}{{classname}}.{{nameInCamelCase}}{{/isEnum}}{{^isEnum}}{{{datatype}}}{{/isEnum}}? = {{#defaultvalue}}{{defaultvalue}}{{/defaultvalue}}{{^defaultvalue}}null{{/defaultvalue}}
+                {{#databaseIsIndexed}}{{^isUUIDProperty}}@Index {{/isUUIDProperty}}{{/databaseIsIndexed}}{{#isUUIDProperty}}@Index override {{/isUUIDProperty}}{{#isSoftDeletableProperty}}override {{/isSoftDeletableProperty}}var {{{nameInCamelCaseFirstLetterLower}}}: {{#isEnum}}{{classname}}.{{nameInCamelCase}}{{/isEnum}}{{^isEnum}}{{{datatype}}}{{/isEnum}}? = {{#defaultvalue}}{{defaultvalue}}{{/defaultvalue}}{{^defaultvalue}}null{{/defaultvalue}}

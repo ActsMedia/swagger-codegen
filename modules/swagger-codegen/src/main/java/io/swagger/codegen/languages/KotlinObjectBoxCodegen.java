@@ -8,15 +8,15 @@ import io.swagger.codegen.CodegenProperty;
 import io.swagger.codegen.CliOption;
 import io.swagger.codegen.CodegenConstants;
 import io.swagger.codegen.CodegenType;
+import io.swagger.codegen.DefaultCodegen;
 import io.swagger.codegen.SupportingFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.io.IOException;
+import java.io.*;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
 
@@ -55,8 +55,8 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         modelDocTemplateFiles.put("model_doc.mustache", ".md");
         apiDocTemplateFiles.put("api_doc.mustache", ".md");
         embeddedTemplateDir = templateDir = "kotlin-ObjectBox";
-        apiPackage = packageName + ".apis";
-        modelPackage = packageName + ".models";
+        // apiPackage = packageName + ".apis";
+        // modelPackage = packageName + ".models";
 
         CliOption dateLibrary = new CliOption(DATE_LIBRARY, "Option. Date library to use");
         Map<String, String> dateOptions = new HashMap<>();
@@ -65,6 +65,15 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         dateOptions.put(DateLibrary.JAVA8.value, "Java 8 native JSR310");
         dateLibrary.setEnum(dateOptions);
         cliOptions.add(dateLibrary);
+
+        typeMapping.put("array", "kotlin.collections.List");
+        typeMapping.put("list", "kotlin.collections.List");
+        typeMapping.put("binary", "kotlin.collections.List<kotlin.Byte>");
+
+        instantiationTypes.put("array", "listOf");
+        instantiationTypes.put("list", "listOf");
+
+        
 
         CodegenModelFactory.setTypeMapping(CodegenModelType.PROPERTY, ObjectBoxProperty.class);
         CodegenModelFactory.setTypeMapping(CodegenModelType.MODEL, ObjectBoxModel.class);
@@ -136,23 +145,7 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
             return;
         }
         ObjectBoxProperty typedProperty = (ObjectBoxProperty) property;
-
-        // Check JSON for custom code
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String,Object> jsonData = mapper.readValue(property.jsonSchema, Map.class);
-
-            typedProperty.isIndexed = (Boolean) jsonData.get("x-is-indexed");
-            typedProperty.isForeignTableReferenceByUUID = (Boolean) jsonData.get("x-is-foreign-table-reference-by-uuid");
-            typedProperty.isToManyReference = (Boolean) jsonData.get("x-is-to-many-reference");
-            typedProperty.isCreateTableLinkMethods = (Boolean) jsonData.get("x-is-enable-table-link-methods");
-            typedProperty.referencesPropertyName = (String) jsonData.get("x-references-property-name");
-            typedProperty.referencesRelationName = (String) jsonData.get("x-references-relation-name");
-            typedProperty.referenceInverseName = (String) jsonData.get("x-reference-inverse-name");
-            typedProperty.isDeletedOnServerProperty = (Boolean) jsonData.get("x-deleted-on-server-property");
-            typedProperty.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
-
-        } catch (IOException e) {}
+        typedProperty.processCustomProperties();
     }
 
     @Override
@@ -161,73 +154,169 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
             return;
         }
         ObjectBoxModel typedModel = (ObjectBoxModel) model;
-        
-        // Check JSON for custom code
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String,Object> jsonData = mapper.readValue(model.modelJson, Map.class);
-            
-			typedModel.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
-            typedModel.isInitRequired = (Boolean) jsonData.get("x-init-required");
-            typedModel.isBuildCoreData = (Boolean) jsonData.get("x-build-core-data");
-            typedModel.isProtocolUUIDType = (Boolean) jsonData.get("x-protocol-uuid-type");
-            typedModel.isProtocolSortOrderType = (Boolean) jsonData.get("x-protocol-sort-order-type");
-            typedModel.isProtocolNameType = (Boolean) jsonData.get("x-protocol-name-type");
-            typedModel.isProtocolSoftDeletableType = (Boolean) jsonData.get("x-protocol-soft-deleteable-type");
+        typedModel.processCustomProperties();
+    }
 
-        } catch (IOException e) {}
+    // override with any special post-processing
+    @SuppressWarnings("static-method")
+    @Override
+    public Map<String, Object> postProcessAllModels(Map<String, Object> objs) {
+        
+        Map<String, Object> allModels = new HashMap<String, Object>();
+        
+        for (Entry<String, Object> entry : objs.entrySet()) {
+            String modelName = toModelName(entry.getKey());
+            Map<String, Object> inner = (Map<String, Object>) entry.getValue();
+            List<Map<String, Object>> models = (List<Map<String, Object>>) inner.get("models");
+            List<Map<String, Object>> newModels = new ArrayList<Map<String, Object>>();
+            for (Map<String, Object> mo : models) {
+                try {
+                    CodegenModel cm = (CodegenModel) mo.get("model");
+                    if(cm instanceof ObjectBoxModel && ((ObjectBoxModel) cm).isDatabaseModel) {
+                        System.out.println("Found database model for model: " + cm.name);
+                        newModels.add(mo);
+                    }
+                }catch(java.lang.NullPointerException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if(newModels.size() > 0) {
+                inner.put("models", newModels);
+                allModels.put(entry.getKey(), inner);
+            }
+        }
+        return allModels;
     }
 
     static public class ObjectBoxProperty extends CodegenProperty {
-        // DWS Additions
+        
+        // Database Additions
 
         // Whether to index the property in the database
-        public Boolean isIndexed; // x-is-indexed
+        public Boolean databaseIsIndexed; // x-database-is-indexed
 
         // Whether the attached object(s) is a reference to another table
-        public Boolean isForeignTableReferenceByUUID; // x-is-foreign-table-reference-by-uuid
-
-        // Whether this table should link to a core data table. For example, we typically only want linking in one direction. For example, employees might load after stores, so during the employee setup, we link to stores, but when building stores, we don't try to link to employees because they haven't been loaded yet.
-        public Boolean isCreateTableLinkMethods; // x-is-enable-table-link-methods
+        public Boolean databaseIsRelation; // x-database-is-relation
 
         // Whether the reference is a single uuid (false) or contains an array (true). If it contains an array, the reference will be a "to many" relationship.
-        public Boolean isToManyReference; // x-is-to-many-reference
+        public Boolean databaseRelationIsToManyReference; // x-database-relation-is-to-many-reference
 
         // The table/model name that the property relates to. For example "Category"
-        public String referencesPropertyName; // x-references-property-name
+        public String databaseRelationModelType; // x-database-relation-model-type
 
         // The relation name for the referenced table (reference to Category object might be categories)
-        public String referencesRelationName; // x-references-relation-name
+        public String databaseRelationPropertyName; // x-database-relation-property-name
 
         // The inverse relation for Core Data
-        public String referenceInverseName; // x-reference-inverse-name
+        public String databaseRelationForeignPropertyName; // x-database-relation-foreign-property-name
 
+        // Whether this table should link to a core data table. For example, we typically only want linking in one direction. For example, employees might load after stores, so during the employee setup, we link to stores, but when building stores, we don't try to link to employees because they haven't been loaded yet.
+        public Boolean databaseRelationCreateLinkMethods; // x-database-relation-create-link-methods
+        
+
+        //Protocol Additions
+        
         // This property keeps tracks of whether the object has been soft-deleted on the server.
-        public Boolean isDeletedOnServerProperty; // x-is-deleted-on-server-property
+        public Boolean isSoftDeletableProperty; // x-is-soft-deletable-property
 
-        // PJF Additions
+        // This property keeps tracks of whether this is  a UUID property
+        public Boolean isUUIDProperty; // x-is-uuid-property
+
+
+        //Testing Additions
+
         //Ability to exclude something from auto-gen tests
         public Boolean isExcludedFromTests; //x-exclude-from-tests
+
+        //Other
+
+        public String nameInCamelCaseFirstLetterLower;
+
+        public void processCustomProperties(){
+            
+            // Check JSON for custom code
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String,Object> jsonData = mapper.readValue(this.jsonSchema, Map.class);
+
+                //Database 
+
+                this.databaseIsIndexed = (Boolean) jsonData.get("x-database-is-indexed");
+                this.databaseIsRelation = (Boolean) jsonData.get("x-database-is-relation");
+                this.databaseRelationIsToManyReference = (Boolean) jsonData.get("x-database-relation-is-to-many-reference");
+                
+                this.databaseRelationModelType = (String) jsonData.get("x-database-relation-model-type");
+                this.databaseRelationPropertyName = (String) jsonData.get("x-database-relation-property-name");
+                this.databaseRelationForeignPropertyName = (String) jsonData.get("x-database-relation-foreign-property-name");
+
+                this.databaseRelationCreateLinkMethods = (Boolean) jsonData.get("x-database-relation-create-link-methods");
+
+                
+                //Protocols
+                this.isSoftDeletableProperty = (Boolean) jsonData.get("x-is-soft-deletable-property");
+                this.isUUIDProperty = (Boolean) jsonData.get("x-is-uuid-property");
+
+
+                //Testing
+                this.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
+
+                //Other
+                this.nameInCamelCaseFirstLetterLower = DefaultCodegen.camelize(name, true);
+
+            } catch (IOException e) {}
+        }
     }
     
     static public class ObjectBoxModel extends CodegenModel {
 
-        // DWS Additions
+        //Database Additions
 
-        // Builds a convenience initializer with required variables
-        public Boolean isInitRequired; // x-init-required
-
-        // Whether to automatically build the corresponding core-data model
-        // Requires that each model object conforms to UuidFindable
-        public Boolean isBuildCoreData; // x-build-core-data
+        // Whether this model should be built during database generation
+        public Boolean isDatabaseModel; // x-database-model
+        public String databaseModelName; // x-database-model
 
         // Protocols
+
         public Boolean isProtocolUUIDType; // x-protocol-uuid-type
         public Boolean isProtocolSortOrderType; // x-protocol-sort-order-type
         public Boolean isProtocolNameType; // x-protocol-name-type
         public Boolean isProtocolSoftDeletableType; // x-protocol-soft-deleteable-type
+        
+        //Testing 
 
         public Boolean isExcludedFromTests; //x-exclude-from-tests
 
+        //Other
+
+        // Builds a convenience initializer with required variables
+        public Boolean isInitRequired; // x-init-required
+
+        public void processCustomProperties() {
+            
+            // Check JSON for custom code
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String,Object> jsonData = mapper.readValue(this.modelJson, Map.class);
+                
+                //Database
+                this.isDatabaseModel = (Boolean) jsonData.get("x-database-model");
+                this.databaseModelName = (String) jsonData.get("x-database-model-name");
+
+                //Protocols
+                this.isProtocolUUIDType = (Boolean) jsonData.get("x-protocol-uuid-type");
+                this.isProtocolSortOrderType = (Boolean) jsonData.get("x-protocol-sort-order-type");
+                this.isProtocolNameType = (Boolean) jsonData.get("x-protocol-name-type");
+                this.isProtocolSoftDeletableType = (Boolean) jsonData.get("x-protocol-soft-deleteable-type");
+
+                //Testing
+                this.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
+
+                //Other
+                this.isInitRequired = (Boolean) jsonData.get("x-init-required");
+
+    
+            } catch (IOException e) {}
+        }
     }
 }

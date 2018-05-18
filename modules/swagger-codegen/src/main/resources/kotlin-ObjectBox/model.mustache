@@ -3,15 +3,14 @@ package {{modelPackage}}
 
 {{#imports}}import {{import}}
 {{/imports}}
-{{#threetenbp}}
-import org.threeten.bp.LocalDateTime
-{{/threetenbp}}
+import com.mmm.thinbonding.Model.swagger.database.StringListConverter
+import io.objectbox.annotation.*
+import io.objectbox.relation.ToMany
+import io.objectbox.relation.ToOne
+import com.google.gson.annotations.SerializedName
 
 {{#models}}
 {{#model}}
-    {{#isBuildCoreData}}
-/** Was buildCoreData */
-    {{/isBuildCoreData}}
-{{#isEnum}}{{>enum_class}}{{/isEnum}}{{^isEnum}}{{#isAlias}}typealias {{classname}} = {{dataType}}{{/isAlias}}{{^isAlias}}{{>data_class}}{{/isAlias}}{{/isEnum}}
+{{#isDatabaseModel}}{{>object_box_data_class}}{{/isDatabaseModel}}
 {{/model}}
 {{/models}}

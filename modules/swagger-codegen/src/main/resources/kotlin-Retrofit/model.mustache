@@ -1,0 +1,18 @@
+{{>licenseInfo}}
+package {{modelPackage}}
+import java.io.Serializable
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+import com.google.gson.annotations.SerializedName
+
+{{#imports}}import {{import}}
+{{/imports}}
+{{#threetenbp}}
+import org.threeten.bp.LocalDateTime
+{{/threetenbp}}
+
+{{#models}}
+{{#model}}
+{{#isEnum}}{{>enum_class}}{{/isEnum}}{{^isEnum}}{{>data_class}}{{/isEnum}}
+{{/model}}
+{{/models}}

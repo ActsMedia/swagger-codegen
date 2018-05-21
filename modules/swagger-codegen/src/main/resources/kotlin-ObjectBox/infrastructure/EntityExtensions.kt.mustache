@@ -2,11 +2,7 @@ package {{packageName}}.infrastructure
 import io.objectbox.Box
 import io.objectbox.kotlin.boxFor
 
-
-{{#models}}{{#model}}{{#isDatabaseModel}}
-import {{modelPackage}}.{{databaseModelName}}{{/isDatabaseModel}}
-{{/model}}
-{{/models}}
+import {{modelPackage}}.*
 
 {{#models}}
 {{#model}}

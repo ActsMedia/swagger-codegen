@@ -44,6 +44,7 @@ io.swagger.codegen.languages.JavaVertXServerCodegen
 io.swagger.codegen.languages.KotlinClientCodegen
 io.swagger.codegen.languages.KotlinSimpleCodegen
 io.swagger.codegen.languages.KotlinObjectBoxCodegen
+io.swagger.codegen.languages.KotlinRetrofitCodegen
 io.swagger.codegen.languages.LuaClientCodegen
 io.swagger.codegen.languages.LumenServerCodegen
 io.swagger.codegen.languages.NancyFXServerCodegen

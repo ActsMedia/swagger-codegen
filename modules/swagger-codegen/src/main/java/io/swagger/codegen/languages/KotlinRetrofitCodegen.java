@@ -67,6 +67,13 @@ public class KotlinRetrofitCodegen extends AbstractKotlinCodegen {
         dateLibrary.setEnum(dateOptions);
         cliOptions.add(dateLibrary);
 
+        typeMapping.put("array", "kotlin.collections.List");
+        typeMapping.put("list", "kotlin.collections.List");
+        typeMapping.put("binary", "kotlin.collections.List<kotlin.Byte>");
+
+        instantiationTypes.put("array", "listOf");
+        instantiationTypes.put("list", "listOf");
+
         CodegenModelFactory.setTypeMapping(CodegenModelType.PROPERTY, DatabaseCodegenProperty.class);
         CodegenModelFactory.setTypeMapping(CodegenModelType.MODEL, DatabaseCodegenModel.class);
     }

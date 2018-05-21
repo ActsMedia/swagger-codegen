@@ -23,4 +23,7 @@ data class {{classname}} (
     {{/enumVars}}{{/allowableValues}}
     }
 {{/isEnum}}{{/vars}}{{/hasEnums}}
+
+    // This allows us to add static extensions to the class
+    companion object
 }

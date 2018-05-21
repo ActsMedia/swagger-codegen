@@ -54,10 +54,11 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
 
         outputFolder = "generated-code" + File.separator + "kotlin-ObjectBox";
         modelTemplateFiles.put("model.mustache", ".kt");
-        apiTemplateFiles.put("api.mustache", ".kt");
         modelDocTemplateFiles.put("model_doc.mustache", ".md");
-        apiDocTemplateFiles.put("api_doc.mustache", ".md");
         embeddedTemplateDir = templateDir = "kotlin-ObjectBox";
+        ///We're not using APIs in the ObjectBox codegen
+        // apiTemplateFiles.put("api.mustache", ".kt");
+        // apiDocTemplateFiles.put("api_doc.mustache", ".md");
         // apiPackage = packageName + ".apis";
         // modelPackage = packageName + ".models";
 

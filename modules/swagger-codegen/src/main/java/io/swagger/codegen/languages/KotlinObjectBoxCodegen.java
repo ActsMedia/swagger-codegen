@@ -197,6 +197,17 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         return allModels;
     }
 
+    /**
+     * Return the capitalized file name of the model
+     *
+     * @param name the model name
+     * @return the file name of the model
+     */
+    @Override
+    public String toModelFilename(String name) {
+        return DefaultCodegen.camelize(name) + "Entity";
+    }
+
     static public class ObjectBoxProperty extends CodegenProperty {
         
         // Database Additions
@@ -209,6 +220,7 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
 
         // Whether the reference is a single uuid (false) or contains an array (true). If it contains an array, the reference will be a "to many" relationship.
         public Boolean databaseRelationIsToManyReference; // x-database-relation-is-to-many-reference
+        public Boolean databaseRelationIsManyToManyReference; // x-database-relation-is-many-to-many-reference
 
         // The table/model name that the property relates to. For example "Category"
         public String databaseRelationModelType; // x-database-relation-model-type
@@ -221,6 +233,9 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
 
         // Whether this table should link to a core data table. For example, we typically only want linking in one direction. For example, employees might load after stores, so during the employee setup, we link to stores, but when building stores, we don't try to link to employees because they haven't been loaded yet.
         public Boolean databaseRelationCreateLinkMethods; // x-database-relation-create-link-methods
+
+        // This indicates that this property is only needed for database generation, and not necessary for API calls
+        public Boolean databaseRelationOnlyProperty; // x-database-relation-only-property
         
 
         //Protocol Additions
@@ -253,13 +268,14 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
                 this.databaseIsIndexed = (Boolean) jsonData.get("x-database-is-indexed");
                 this.databaseIsRelation = (Boolean) jsonData.get("x-database-is-relation");
                 this.databaseRelationIsToManyReference = (Boolean) jsonData.get("x-database-relation-is-to-many-reference");
+                this.databaseRelationIsManyToManyReference = (Boolean) jsonData.get("x-database-relation-is-many-to-many-reference");
                 
                 this.databaseRelationModelType = (String) jsonData.get("x-database-relation-model-type");
                 this.databaseRelationPropertyName = (String) jsonData.get("x-database-relation-property-name");
                 this.databaseRelationForeignPropertyName = (String) jsonData.get("x-database-relation-foreign-property-name");
 
                 this.databaseRelationCreateLinkMethods = (Boolean) jsonData.get("x-database-relation-create-link-methods");
-
+                this.databaseRelationOnlyProperty = (Boolean) jsonData.get("x-database-relation-only-property");
                 
                 //Protocols
                 this.isSoftDeletableProperty = (Boolean) jsonData.get("x-is-soft-deletable-property");
@@ -314,7 +330,8 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
                 //Database
                 this.isDatabaseModel = (Boolean) jsonData.get("x-database-model");
                 this.databaseModelName = (String) jsonData.get("x-database-model-name");
-
+                this.classFilename = this.databaseModelName;
+                this.classname = this.databaseModelName;
                 //Protocols
                 this.isProtocolUUIDType = (Boolean) jsonData.get("x-protocol-uuid-type");
                 this.isProtocolSortOrderType = (Boolean) jsonData.get("x-protocol-sort-order-type");

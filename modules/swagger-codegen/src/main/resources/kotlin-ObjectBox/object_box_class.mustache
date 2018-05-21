@@ -16,7 +16,9 @@ class {{databaseModelName}} (
     {{#vars}}{{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}
     @Backlink
     lateinit var {{databaseRelationPropertyName}}: ToMany<{{databaseRelationModelType}}>
-    {{/databaseRelationIsToManyReference}}{{^databaseRelationIsToManyReference}}
+    {{/databaseRelationIsToManyReference}}{{#databaseRelationIsManyToManyReference}}
+    lateinit var {{databaseRelationPropertyName}}: ToMany<{{databaseRelationModelType}}>
+    {{/databaseRelationIsManyToManyReference}}{{^databaseRelationIsToManyReference}}{{^databaseRelationIsManyToManyReference}}
     lateinit var {{databaseRelationPropertyName}}: ToOne<{{databaseRelationModelType}}>
-    {{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
+    {{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
 }

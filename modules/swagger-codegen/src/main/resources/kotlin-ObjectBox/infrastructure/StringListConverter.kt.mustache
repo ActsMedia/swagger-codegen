@@ -1,0 +1,19 @@
+package {{packageName}}.infrastructure
+
+import com.google.gson.Gson
+import io.objectbox.converter.PropertyConverter
+
+class StringListConverter: PropertyConverter<List<String>, String> {
+    
+    override fun convertToDatabaseValue(entityProperty: List<String>?): String {
+        return entityProperty?.let {
+            Gson().toJson(it)
+        } ?: ""
+    }
+    
+    override fun convertToEntityProperty(databaseValue: String?): List<String> {
+        return databaseValue?.let {
+            Gson().fromJson(it, Array<String>::class.java).asList()
+        } ?: emptyList()
+    }
+}

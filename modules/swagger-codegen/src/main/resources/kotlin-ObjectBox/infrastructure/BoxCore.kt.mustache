@@ -1,0 +1,8 @@
+package {{packageName}}.infrastructure
+
+import com.mmm.thinbonding.Main.AppContext
+import {{modelPackage}}.MyObjectBox
+
+object BoxCore {
+    val boxStore = MyObjectBox.builder().androidContext(AppContext.context).buildDefault()
+}

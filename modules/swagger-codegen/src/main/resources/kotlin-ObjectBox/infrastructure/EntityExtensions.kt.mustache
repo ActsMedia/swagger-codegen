@@ -1,0 +1,22 @@
+package {{packageName}}.infrastructure
+
+import io.objectbox.Box
+import io.objectbox.kotlin.boxFor
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}
+import {{modelPackage}}.{{databaseModelName}}{{/isDatabaseModel}}
+{{/model}}
+{{/models}}
+
+{{#models}}
+{{#model}}
+{{#isDatabaseModel}}
+
+val {{databaseModelName}}.Companion.entityBox: Box<{{databaseModelName}}>
+        get() {
+            return BoxCore.boxStore.boxFor({{databaseModelName}}::class)
+        }
+{{/isDatabaseModel}}
+{{/model}}
+{{/models}}

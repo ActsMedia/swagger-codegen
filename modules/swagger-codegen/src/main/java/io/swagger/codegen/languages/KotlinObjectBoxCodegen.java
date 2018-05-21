@@ -14,13 +14,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.google.common.base.Strings;
+import java.util.regex.Pattern;
+
 import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
 public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
 
-    
+    protected String invokerPackage = "io.swagger";
 
     public static final String DATE_LIBRARY = "dateLibrary";
     protected CodegenConstants.ENUM_PROPERTY_NAMING_TYPE enumPropertyNaming = CodegenConstants.ENUM_PROPERTY_NAMING_TYPE.camelCase;
@@ -73,14 +76,15 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         instantiationTypes.put("array", "listOf");
         instantiationTypes.put("list", "listOf");
 
-
-        importMapping.put("StringListConverter", "com.mmm.thinbonding.Model.swagger.database.StringListConverter");
         importMapping.put("SoftDeletable", "com.mmm.thinbonding.Model.swagger.database.SoftDeletable");
         importMapping.put("UUIDEntity", "com.mmm.thinbonding.Model.swagger.database.UUIDEntity");
         importMapping.put("annotations", "io.objectbox.annotation.*");
+        importMapping.put("BoxFor", "import io.objectbox.kotlin.boxFor");
         importMapping.put("ToMany", "io.objectbox.relation.ToMany");
         importMapping.put("ToOne", "io.objectbox.relation.ToOne");
         importMapping.put("SerializedName", "com.google.gson.annotations.SerializedName");
+        
+        
         
 
         CodegenModelFactory.setTypeMapping(CodegenModelType.PROPERTY, ObjectBoxProperty.class);
@@ -107,6 +111,26 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
     public void processOpts() {
         super.processOpts();
 
+        if (additionalProperties.containsKey(CodegenConstants.INVOKER_PACKAGE)) {
+            this.invokerPackage = (String) additionalProperties.get(CodegenConstants.INVOKER_PACKAGE);
+            additionalProperties.put(CodegenConstants.INVOKER_PACKAGE, invokerPackage);
+            packageName = invokerPackage + ".swagger.database";
+            additionalProperties.put(CodegenConstants.PACKAGE_NAME, packageName);
+            additionalProperties.put(CodegenConstants.MODEL_PACKAGE, packageName + ".models");
+            modelPackage = packageName + ".models";
+            additionalProperties.put(CodegenConstants.API_PACKAGE, packageName + ".api");
+            apiPackage = packageName + ".api";
+            importMapping.put("Infrastructure", packageName + ".infrastructure.*");
+        } 
+
+        if (!additionalProperties.containsKey(CodegenConstants.MODEL_PACKAGE)) {
+            additionalProperties.put(CodegenConstants.MODEL_PACKAGE, modelPackage);
+        }
+
+        if (!additionalProperties.containsKey(CodegenConstants.API_PACKAGE)) {
+            additionalProperties.put(CodegenConstants.API_PACKAGE, apiPackage);
+        }
+
         if (additionalProperties.containsKey(DATE_LIBRARY)) {
             setDateLibrary(additionalProperties.get(DATE_LIBRARY).toString());
         }
@@ -127,22 +151,32 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
             additionalProperties.put(DateLibrary.JAVA8.value, true);
         }
 
-        supportingFiles.add(new SupportingFile("README.mustache", "", "README.md"));
-
-        supportingFiles.add(new SupportingFile("build.gradle.mustache", "", "build.gradle"));
-        supportingFiles.add(new SupportingFile("settings.gradle.mustache", "", "settings.gradle"));
-
         final String infrastructureFolder = (sourceFolder + File.separator + packageName + File.separator + "infrastructure").replace(".", "/");
 
-        supportingFiles.add(new SupportingFile("infrastructure/ApiClient.kt.mustache", infrastructureFolder, "ApiClient.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/ApiAbstractions.kt.mustache", infrastructureFolder, "ApiAbstractions.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/ApiInfrastructureResponse.kt.mustache", infrastructureFolder, "ApiInfrastructureResponse.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/ApplicationDelegates.kt.mustache", infrastructureFolder, "ApplicationDelegates.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/RequestConfig.kt.mustache", infrastructureFolder, "RequestConfig.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/RequestMethod.kt.mustache", infrastructureFolder, "RequestMethod.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/ResponseExtensions.kt.mustache", infrastructureFolder, "ResponseExtensions.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/Serializer.kt.mustache", infrastructureFolder, "Serializer.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/Errors.kt.mustache", infrastructureFolder, "Errors.kt"));
+        supportingFiles.add(new SupportingFile("infrastructure/EntityExtensions.kt.mustache", infrastructureFolder, "EntityExtensions.kt"));
+        supportingFiles.add(new SupportingFile("infrastructure/BoxCore.kt.mustache", infrastructureFolder, "BoxCore.kt"));
+        supportingFiles.add(new SupportingFile("infrastructure/UUIDEntity.kt.mustache", infrastructureFolder, "UUIDEntity.kt"));
+        supportingFiles.add(new SupportingFile("infrastructure/SoftDeletable.kt.mustache", infrastructureFolder, "SoftDeletable.kt"));
+        supportingFiles.add(new SupportingFile("infrastructure/StringListConverter.kt.mustache", infrastructureFolder, "StringListConverter.kt"));
+    }
+
+    /*
+     * Derive invoker package name based on the input
+     * e.g. foo.bar.model => foo.bar
+     *
+     * @param input API package/model name
+     * @return Derived invoker package name based on API package/model name
+     */
+    private String deriveInvokerPackageName(String input) {
+        String[] parts = input.split(Pattern.quote(".")); // Split on period.
+
+        StringBuilder sb = new StringBuilder();
+        String delim = "";
+        for (String p : Arrays.copyOf(parts, parts.length-1)) {
+            sb.append(delim).append(p);
+            delim = ".";
+        }
+        return sb.toString();
     }
 
     // overridden to post-process any model and property properties
@@ -343,15 +377,8 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
 
                 //Other
                 this.isInitRequired = (Boolean) jsonData.get("x-init-required");
-                
-                if(this.isProtocolSoftDeletableType) {
-                    imports.add("SoftDeletable");
-                }
-                if(this.isProtocolUUIDType) {
-                    imports.add("UUIDEntity");
-                }
+                imports.add("Infrastructure");
 
-                imports.add("StringListConverter");
                 imports.add("annotations");
                 imports.add("ToMany");
                 imports.add("ToOne");

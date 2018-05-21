@@ -21,4 +21,7 @@ class {{databaseModelName}} (
     {{/databaseRelationIsManyToManyReference}}{{^databaseRelationIsToManyReference}}{{^databaseRelationIsManyToManyReference}}
     lateinit var {{databaseRelationPropertyName}}: ToOne<{{databaseRelationModelType}}>
     {{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
+
+    // This allows us to add static extensions to the class
+    companion object
 }

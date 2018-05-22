@@ -1,0 +1,64 @@
+package {{packageName}}.infrastructure
+import io.objectbox.Box
+import io.objectbox.kotlin.boxFor
+
+import {{modelPackage}}.*
+import {{invokerPackage}}.swagger.models.*
+
+{{#models}}
+{{#model}}
+{{#isDatabaseModel}}
+
+fun {{plainClassName}}.makeOrUpdateEntity(): {{databaseModelName}} {
+    
+    val currentEntity = {{databaseModelName}}.itemForUUID(uuid)?.updateWith(this) ?:
+                        {{databaseModelName}}.addEntity(this)
+    currentEntity.updateRelationshipsFromUUIDs()
+    
+    return currentEntity
+}
+
+fun {{plainClassName}}.toEntity(): {{databaseModelName}} =
+        {{databaseModelName}}({{#vars}}{{nameInCamelCaseFirstLetterLower}} = {{nameInCamelCaseFirstLetterLower}}{{^-last}}, {{/-last}}{{/vars}})
+
+fun {{databaseModelName}}.Companion.addEntity(newValue: {{plainClassName}}): {{databaseModelName}} {
+    val newEntity = newValue.toEntity()
+    entityBox.put(newEntity)
+    return newEntity
+}
+
+
+fun {{databaseModelName}}.updateWith(model: {{plainClassName}}): {{databaseModelName}} {
+    {{#vars}}{{^databaseRelationOnlyProperty}}
+    {{nameInCamelCaseFirstLetterLower}} = model.{{nameInCamelCaseFirstLetterLower}}{{/databaseRelationOnlyProperty}}{{/vars}}
+
+    return this
+}
+
+fun {{databaseModelName}}.toBasicModel() = {{plainClassName}}({{#vars}}{{nameInCamelCaseFirstLetterLower}} = {{nameInCamelCaseFirstLetterLower}}{{^-last}}, {{/-last}}{{/vars}})
+
+fun {{databaseModelName}}.updateRelationshipsFromUUIDs() {
+    {{#vars}}{{#var}}{{#databaseIsRelation}}
+    {{#databaseRelationIsToManyReference}}
+    val newItems = {{databaseRelationModelType}}.itemsForUUIDs(({{nameInCamelCaseFirstLetterLower}})
+    if(newItems.isNotEmpty()) {
+        ({{databaseRelationPropertyName}}.removeAll(({{databaseRelationPropertyName}})
+        ({{databaseRelationPropertyName}}.addAll(newItems)
+    }
+    {{/databaseRelationIsToManyReference}}{{#databaseRelationIsManyToManyReference}}
+    val newItems = {{databaseRelationModelType}}.itemsForUUIDs(({{nameInCamelCaseFirstLetterLower}})
+    if(newItems.isNotEmpty()) {
+        ({{databaseRelationPropertyName}}.removeAll(({{databaseRelationPropertyName}})
+        ({{databaseRelationPropertyName}}.addAll(newItems)
+    }
+    {{/databaseRelationIsManyToManyReference}}{{^databaseRelationIsToManyReference}}{{^databaseRelationIsManyToManyReference}}
+    val newRelationItem = {{databaseRelationModelType}}.itemForUUID({{nameInCamelCaseFirstLetterLower}})?.let {
+        {{databaseRelationPropertyName}}.target = it
+    }
+    {{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/var}}{{/vars}}
+    
+    {{databaseModelName}}.entityBox.put(this)
+}
+{{/isDatabaseModel}}
+{{/model}}
+{{/models}}

@@ -159,6 +159,7 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         supportingFiles.add(new SupportingFile("infrastructure/UUIDEntity.kt.mustache", infrastructureFolder, "UUIDEntity.kt"));
         supportingFiles.add(new SupportingFile("infrastructure/SoftDeletable.kt.mustache", infrastructureFolder, "SoftDeletable.kt"));
         supportingFiles.add(new SupportingFile("infrastructure/StringListConverter.kt.mustache", infrastructureFolder, "StringListConverter.kt"));
+        supportingFiles.add(new SupportingFile("infrastructure/ModelConversionExtensions.kt.mustache", infrastructureFolder, "ModelConversionExtensions.kt"));
     }
 
     /*

@@ -28,6 +28,7 @@ public class DatabaseCodegenModel extends CodegenModel {
     // Whether this model should be built during database generation
     public Boolean isDatabaseModel; // x-database-model
     public String databaseModelName; // x-database-model
+    public String plainClassName;
 
     // Protocols
 
@@ -60,6 +61,7 @@ public class DatabaseCodegenModel extends CodegenModel {
             this.isDatabaseModel = (Boolean) jsonData.get("x-database-model");
             this.databaseModelName = (String) jsonData.get("x-database-model-name");
             if(isDatabaseGeneration) {
+                this.plainClassName = this.classname;
                 this.classFilename = this.databaseModelName;
                 this.classname = this.databaseModelName;
             }

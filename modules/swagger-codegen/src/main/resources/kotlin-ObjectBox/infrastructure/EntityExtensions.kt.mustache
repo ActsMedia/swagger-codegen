@@ -23,6 +23,20 @@ fun {{databaseModelName}}.Companion.itemForUUID(uuid: String?): {{databaseModelN
         throw e
     }
 }
+
+fun {{databaseModelName}}.Companion.itemsForUUIDs(uuids: List<String>?): List<{{databaseModelName}}> {
+    try {
+        var query = entityBox.query()
+        uuids?.forEach { query = query.or().equal({{databaseModelName}}_.uuid, it)}
+        return query.build().find()
+        
+    }
+    catch(e: io.objectbox.exception.DbException) {
+        //This means the database is in a bad state. At some point we need to be able to recover from this
+        e.printStackTrace()
+    }
+    return emptyList()
+}
 {{/isProtocolUUIDType}}{{/isDatabaseModel}}
 {{/model}}
 {{/models}}

@@ -1,5 +1,5 @@
 {{#description}}
-                /* {{{description}}} */
+    /* {{{description}}} */
 {{/description}}
-                @SerializedName("{{name}}")
-                {{#databaseIsIndexed}}{{^isUUIDProperty}}@Index {{/isUUIDProperty}}{{/databaseIsIndexed}}{{#isUUIDProperty}}@Index override {{/isUUIDProperty}}{{#isSoftDeletableProperty}}override {{/isSoftDeletableProperty}}var {{{nameInCamelCaseFirstLetterLower}}}: {{#isEnum}}{{classname}}.{{nameInCamelCase}}{{/isEnum}}{{^isEnum}}{{{datatype}}}{{/isEnum}}
+    @SerializedName("{{name}}")
+    {{#databaseIsIndexed}}{{^isUUIDProperty}}@Index {{/isUUIDProperty}}{{/databaseIsIndexed}}{{#isUUIDProperty}}@Index override {{/isUUIDProperty}}{{#isSoftDeletableProperty}}override {{/isSoftDeletableProperty}}var {{{nameInCamelCaseFirstLetterLower}}}: {{{datatype}}}{{#isString}} = ""{{^isString}}{{#isInteger}} = 0{{/isInteger}}{{#isFloat}} = 0.0{{/isFloat}}{{isBoolean}} = false{{/isBoolean}}{{#isListContainer}} = emptyList(){{/isListContainer}}

@@ -1,6 +1,7 @@
 package {{packageName}}.infrastructure
 import io.objectbox.Box
 import io.objectbox.kotlin.boxFor
+import io.objectbox.BoxStore
 
 import {{modelPackage}}.*
 import {{invokerPackage}}.swagger.models.*
@@ -9,21 +10,21 @@ import {{invokerPackage}}.swagger.models.*
 {{#model}}
 {{#isDatabaseModel}}
 
-fun {{plainClassName}}.makeOrUpdateEntity(): {{databaseModelName}} {
+fun {{databaseModelName}}.Companion.makeOrUpdateEntities(items: List<{{plainClassName}}>, box: Box<{{databaseModelName}}> = {{databaseModelName}}.entityBox) {
     
-    val currentEntity = {{databaseModelName}}.itemForUUID(uuid)?.updateWith(this) ?:
-                        {{databaseModelName}}.addEntity(this)
-    currentEntity.updateRelationshipsFromUUIDs()
-    
-    return currentEntity
+    val allEntities = box.all.associateBy({{databaseModelName}}::uuid, {it} )
+    val updatedEntities = items.map {
+        allEntities.get(it.uuid)?.updateWith(it) ?: {{databaseModelName}}.addEntity(it, box)
+    }
+    box.put(updatedEntities)
 }
 
 fun {{plainClassName}}.toEntity(): {{databaseModelName}} =
         {{databaseModelName}}({{#vars}}{{nameInCamelCaseFirstLetterLower}} = {{nameInCamelCaseFirstLetterLower}}{{^-last}}, {{/-last}}{{/vars}})
 
-fun {{databaseModelName}}.Companion.addEntity(newValue: {{plainClassName}}): {{databaseModelName}} {
+fun {{databaseModelName}}.Companion.addEntity(newValue: {{plainClassName}}, box: Box<{{databaseModelName}}> = entityBox): {{databaseModelName}} {
     val newEntity = newValue.toEntity()
-    entityBox.put(newEntity)
+    box.put(newEntity)
     return newEntity
 }
 
@@ -37,27 +38,26 @@ fun {{databaseModelName}}.updateWith(model: {{plainClassName}}): {{databaseModel
 
 fun {{databaseModelName}}.toBasicModel() = {{plainClassName}}({{#vars}}{{nameInCamelCaseFirstLetterLower}} = {{nameInCamelCaseFirstLetterLower}}{{^-last}}, {{/-last}}{{/vars}})
 
-fun {{databaseModelName}}.updateRelationshipsFromUUIDs() {
-    {{#vars}}{{#var}}{{#databaseIsRelation}}
-    {{#databaseRelationIsToManyReference}}
-    val newItems = {{databaseRelationModelType}}.itemsForUUIDs(({{nameInCamelCaseFirstLetterLower}})
-    if(newItems.isNotEmpty()) {
-        ({{databaseRelationPropertyName}}.removeAll(({{databaseRelationPropertyName}})
-        ({{databaseRelationPropertyName}}.addAll(newItems)
-    }
-    {{/databaseRelationIsToManyReference}}{{#databaseRelationIsManyToManyReference}}
-    val newItems = {{databaseRelationModelType}}.itemsForUUIDs(({{nameInCamelCaseFirstLetterLower}})
-    if(newItems.isNotEmpty()) {
-        ({{databaseRelationPropertyName}}.removeAll(({{databaseRelationPropertyName}})
-        ({{databaseRelationPropertyName}}.addAll(newItems)
-    }
-    {{/databaseRelationIsManyToManyReference}}{{^databaseRelationIsToManyReference}}{{^databaseRelationIsManyToManyReference}}
-    val newRelationItem = {{databaseRelationModelType}}.itemForUUID({{nameInCamelCaseFirstLetterLower}})?.let {
-        {{databaseRelationPropertyName}}.target = it
-    }
-    {{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/var}}{{/vars}}
-    
-    {{databaseModelName}}.entityBox.put(this)
+fun {{databaseModelName}}.Companion.updateRelationshipsFromUUIDs(store: BoxStore, ownBox: Box<{{databaseModelName}}> = entityBox) {
+    val allOwn = ownBox.all.associateBy({{databaseModelName}}::uuid)
+    {{#vars}}{{#databaseIsRelation}}{{^databaseRelationOnlyProperty}}{{^databaseRelationIsToManyReference}}{{^databaseRelationIsManyToManyReference}}
+    val {{databaseRelationPropertyName}}Entities = store.boxFor({{databaseRelationModelType}}::class).all.associateBy({{databaseRelationModelType}}::uuid)
+    allOwn.forEach {
+        it.value.{{nameInCamelCaseFirstLetterLower}}.let { uuid -> Unit
+            it.value.{{databaseRelationPropertyName}}.target = {{databaseRelationPropertyName}}Entities[uuid]
+        }
+    }{{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}
+    {{#databaseRelationIsManyToManyReference}}
+    val {{databaseRelationPropertyName}}Entities = store.boxFor({{databaseRelationModelType}}::class).all.associateBy({{databaseRelationModelType}}::uuid)
+
+    allOwn.forEach {
+        it.value.{{databaseRelationPropertyName}}.removeAll(it.value.{{databaseRelationPropertyName}})
+        it.value.{{nameInCamelCaseFirstLetterLower}}{{^required}}?{{/required}}.mapNotNull{ {{databaseRelationPropertyName}}Entities[it]}{{^required}}?{{/required}}.let { items -> Unit
+            it.value.{{databaseRelationPropertyName}}.addAll(items)
+        }
+    }{{/databaseRelationIsManyToManyReference}}
+    {{/databaseRelationOnlyProperty}}{{/databaseIsRelation}}{{/vars}}
+    ownBox.put(allOwn.values)
 }
 {{/isDatabaseModel}}
 {{/model}}

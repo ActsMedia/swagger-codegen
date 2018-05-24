@@ -28,7 +28,6 @@ fun {{databaseModelName}}.Companion.addEntity(newValue: {{plainClassName}}, box:
     return newEntity
 }
 
-
 fun {{databaseModelName}}.updateWith(model: {{plainClassName}}): {{databaseModelName}} {
     {{#vars}}{{^databaseRelationOnlyProperty}}
     {{nameInCamelCaseFirstLetterLower}} = model.{{nameInCamelCaseFirstLetterLower}}{{/databaseRelationOnlyProperty}}{{/vars}}
@@ -48,14 +47,19 @@ fun {{databaseModelName}}.Companion.updateRelationshipsFromUUIDs(store: BoxStore
         }
     }{{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}
     {{#databaseRelationIsManyToManyReference}}
-    val {{databaseRelationPropertyName}}Entities = store.boxFor({{databaseRelationModelType}}::class).all.associateBy({{databaseRelationModelType}}::uuid)
-
+    val {{databaseRelationPropertyName}}Box = store.boxFor({{databaseRelationModelType}}::class)
+    val {{databaseRelationPropertyName}}Entities = {{databaseRelationPropertyName}}Box.all.associateBy({{databaseRelationModelType}}::uuid)
+    {{databaseRelationPropertyName}}Entities.values.forEach { it.{{databaseRelationForeignPropertyName}}.removeAll(it.{{databaseRelationForeignPropertyName}}) }
     allOwn.forEach {
         it.value.{{databaseRelationPropertyName}}.removeAll(it.value.{{databaseRelationPropertyName}})
         it.value.{{nameInCamelCaseFirstLetterLower}}{{^required}}?{{/required}}.mapNotNull{ {{databaseRelationPropertyName}}Entities[it]}{{^required}}?{{/required}}.let { items -> Unit
             it.value.{{databaseRelationPropertyName}}.addAll(items)
+            items.forEach { reverseEntity ->
+                reverseEntity.{{databaseRelationForeignPropertyName}}.add(it.value)
+            }
         }
-    }{{/databaseRelationIsManyToManyReference}}
+    }
+    {{databaseRelationPropertyName}}Box.put({{databaseRelationPropertyName}}Entities.values){{/databaseRelationIsManyToManyReference}}
     {{/databaseRelationOnlyProperty}}{{/databaseIsRelation}}{{/vars}}
     ownBox.put(allOwn.values)
 }

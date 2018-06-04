@@ -83,6 +83,10 @@ public class DatabaseCodegenModel extends CodegenModel {
                 imports.add("ToMany");
                 imports.add("ToOne");
                 imports.add("SerializedName");
+                imports.add("Parcelable");
+                imports.add("IgnoredOnParcel");
+                imports.add("Parcelize");
+                imports.add("Serializable");
             }
 
         } catch (IOException e) {}

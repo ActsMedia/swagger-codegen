@@ -83,6 +83,10 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         importMapping.put("BoxFor", "import io.objectbox.kotlin.boxFor");
         importMapping.put("ToMany", "io.objectbox.relation.ToMany");
         importMapping.put("ToOne", "io.objectbox.relation.ToOne");
+        importMapping.put("Parcelable", "android.os.Parcelable");
+        importMapping.put("IgnoredOnParcel", "kotlinx.android.parcel.IgnoredOnParcel");
+        importMapping.put("Parcelize", "kotlinx.android.parcel.Parcelize");
+        importMapping.put("Serializable", "java.io.Serializable");
         importMapping.put("SerializedName", "com.google.gson.annotations.SerializedName");
         
         

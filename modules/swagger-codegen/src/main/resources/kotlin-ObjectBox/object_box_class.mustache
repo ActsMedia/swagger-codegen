@@ -19,7 +19,7 @@ class {{databaseModelName}} (
     
     {{#vars}}{{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}
     @IgnoredOnParcel
-    @Backlink
+    @Backlink(to = "{{databaseRelationForeignPropertyName}}")
     lateinit var {{databaseRelationPropertyName}}: ToMany<{{databaseRelationModelType}}>
     {{/databaseRelationIsToManyReference}}{{#databaseRelationIsManyToManyReference}}
     @IgnoredOnParcel

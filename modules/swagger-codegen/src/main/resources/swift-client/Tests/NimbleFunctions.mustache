@@ -1,0 +1,52 @@
+//
+//  NimbleFunctions.swift
+//  SwaggerTesting
+//
+//  Created by Paul Fechner on 3/6/17.
+//  Copyright © 2017 ActsMedia. All rights reserved.
+//
+
+/// A Nimble matcher that succeeds when the actual value is equal to the expected value.
+/// Values can support equal by supporting the Equatable protocol.
+///
+/// @see beCloseTo if you want to match imprecise types (eg - floats, doubles).
+import Quick
+import Nimble
+public func equalOrBothNil<T: Equatable>(_ expectedValue: T?) -> MatcherFunc<T> {
+	return MatcherFunc { actualExpression, failureMessage in
+		failureMessage.postfixMessage = "equal <\(stringify(expectedValue))>"
+		let actualValue = try actualExpression.evaluate()
+		guard let nonNilActualValue = actualValue, let nonNilExpectedValue = expectedValue else {
+			return actualValue == nil && expectedValue == nil
+		}
+		return nonNilActualValue == nonNilExpectedValue
+	}
+}
+
+/// A Nimble matcher that succeeds when the actual value is equal to the expected value.
+/// Values can support equal by supporting the Equatable protocol.
+///
+/// @see beCloseTo if you want to match imprecise types (eg - floats, doubles).
+public func equalOrBothNil<T: Equatable, C: Equatable>(_ expectedValue: [T: C]?) -> MatcherFunc<[T: C]> {
+	return MatcherFunc { actualExpression, failureMessage in
+		failureMessage.postfixMessage = "equal <\(stringify(expectedValue))>"
+		let actualValue = try actualExpression.evaluate()
+		guard let nonNilActualValue = actualValue, let nonNilExpectedValue = expectedValue else {
+			return actualValue == nil && expectedValue == nil
+		}
+		return nonNilActualValue == nonNilExpectedValue
+	}
+}
+
+/// A Nimble matcher that succeeds when the actual collection is equal to the expected collection.
+/// Items must implement the Equatable protocol.
+public func equalOrBothNil<T: Equatable>(_ expectedValue: [T]?) -> MatcherFunc<[T]> {
+	return MatcherFunc { actualExpression, failureMessage in
+		failureMessage.postfixMessage = "equal <\(stringify(expectedValue))>"
+		let actualValue = try actualExpression.evaluate()
+		guard let nonNilActualValue = actualValue, let nonNilExpectedValue = expectedValue else {
+			return actualValue == nil && expectedValue == nil
+		}
+		return nonNilActualValue == nonNilExpectedValue
+	}
+}

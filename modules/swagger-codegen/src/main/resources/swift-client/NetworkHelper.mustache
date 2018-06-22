@@ -1,0 +1,88 @@
+//
+// NetworkHelper.swift
+// API Version 0.0.1
+//
+// Created by Paul Fechner on 3/20/17.
+// Copyright © 2017 ActsMedia. All rights reserved.
+
+import Foundation
+
+/// A method to combine dictionaries of type [String:String]
+func +(lhs: [String:String], rhs: [String:String]) -> [String:String] {
+    var base = [String:String]()
+    lhs.forEach { (key, value) -> () in
+        base.updateValue(value, forKey: key)
+    }
+    rhs.forEach { (key, value) -> () in
+        base.updateValue(value, forKey: key)
+    }
+    return base
+}
+
+protocol NetworkAPIPathProvider {
+	static var mainAPIPath: String { get }
+	static var basePath: String { get }
+}
+
+protocol OAuthInfoProvider {
+	static var clientID: String { get }
+	static var clientSecret: String { get }
+}
+
+protocol SwaggerAPIInfoProvider: NetworkAPIPathProvider, OAuthInfoProvider { }
+
+class Network {
+
+	class var Requestor: NetworkRequestor.Type {
+		return SwaggerNetworkRequestor.self
+	}
+
+	class var apiProvider: SwaggerAPIInfoProvider.Type {
+		return DBConst.self
+	}
+
+	private static let grant_type_password = "password"
+	private static let grant_type_refresh = "refresh_token"
+
+	class func refreshBody(with tokenType: Token.Type = Token.self) -> [String : String]? {
+		guard let refreshtoken = tokenType.refresh else {
+			return nil
+		}
+		return [ "grant_type":grant_type_refresh,
+		         "refresh_token":refreshtoken ]
+	}
+
+	class func authorizationBody(for username: String, with password : String) -> [String : String] {
+		return [ "grant_type":grant_type_password,
+		         "username":username,
+		         "password":password,
+		         "client_id":apiProvider.clientID,
+		         "client_secret":apiProvider.clientSecret ]
+	}
+
+	class func url(for endpoint: String, versioned: Bool = true) -> URL {
+		return URL(string: (versioned ? apiProvider.mainAPIPath : apiProvider.basePath) + endpoint)!
+	}
+
+	struct Header {
+		static let json = ["Content-Type":"application/json"]
+	
+		static func auth() -> [String : String]? {
+			return auth(with: Token.self)
+		}
+
+		static func auth(with tokenType: Token.Type) -> [String : String]? {
+			guard let token = tokenType.header else { return nil }
+			return ["Authorization":"Bearer " + token]
+		}
+	
+		static var standardIncludeAuth: [String : String]? {
+			return makeStandardIncludeAuth(with: Token.self)
+		}
+
+		static func makeStandardIncludeAuth(with tokenType: Token.Type) -> [String : String]? {
+			guard let auth = auth(with: tokenType) else { return nil }
+			return json + auth
+		}
+	}
+}

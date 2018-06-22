@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="9525" systemVersion="15D21" minimumToolsVersion="Xcode 7.0">{{#models}}{{#model}}{{#isBuildCoreData}}
+	<entity name="{{classname}}CD" representedClassName="{{classname}}CD" syncable="YES">
+{{#vars}}{{^isForeignTableReferenceByUUID}}		<attribute name="{{name}}"{{^required}} optional="YES"{{/required}} attributeType="{{datatype}}"{{#isIndexed}} indexed="YES"{{/isIndexed}} syncable="YES"/>
+{{/isForeignTableReferenceByUUID}}{{#isForeignTableReferenceByUUID}}		<relationship name="{{referencesRelationName}}"{{^required}} optional="YES"{{/required}}{{#isToManyReference}} toMany="YES"{{/isToManyReference}}{{^isToManyReference}} maxCount="1"{{/isToManyReference}} deletionRule="Nullify" destinationEntity="{{referencesPropertyName}}CD" inverseName="{{referenceInverseName}}" inverseEntity="{{referencesPropertyName}}CD" syncable="YES"/>
+{{/isForeignTableReferenceByUUID}}{{/vars}}	</entity>{{/isBuildCoreData}}{{/model}}{{/models}}
+</model>

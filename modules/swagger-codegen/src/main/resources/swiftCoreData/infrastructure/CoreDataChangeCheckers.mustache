@@ -1,0 +1,47 @@
+// CoreDataChangeCheckers.swift
+// API Version {{appVersion}}
+// Generated: {{generatedDate}}
+//
+
+import Foundation
+import CoreData
+
+protocol CoreDataChangeCheckable {
+    func matchingCoreDataHasChanged(context: NSManagedObjectContext) -> Bool
+}
+
+{{#models}}{{#model}}{{#isBuildCoreData}}{{#isProtocolUUIDType}}extension {{classname}}: CoreDataChangeCheckable {
+    func matchingCoreDataHasChanged(context: NSManagedObjectContext) -> Bool
+    {
+        guard let cd{{classname}} = {{classname}}CD.objectForUuid(uuid, context: context) as? {{classname}}CD else { 
+            return true
+        }
+
+{{#vars}}{{^isForeignTableReferenceByUUID}}        guard cd{{classname}}.{{name}} == {{name}} else { return true}
+{{/isForeignTableReferenceByUUID}}
+{{#isForeignTableReferenceByUUID}}{{#isToManyReference}}
+        if let uuids = {{name}} {
+            if cd{{classname}}.{{referencesRelationName}}.count != uuids.count { return true }
+            for object in cd{{classname}}.{{referencesRelationName}} {
+                if !uuids.contains(object.uuid) {
+                    return false
+                }
+            }
+        } else if cd{{classname}}.{{referencesRelationName}}.count != 0 {
+            return true
+        }
+{{/isToManyReference}}
+{{^isToManyReference}}
+        if let uuid = {{name}} {
+            if cd{{classname}}.{{referencesRelationName}}.uuid != uuid {
+                return true
+            }
+        } else if cd{{classname}}.{{referencesRelationName}} != nil {
+            return true
+        }
+{{/isToManyReference}}{{/isForeignTableReferenceByUUID}}{{/vars}}
+        return false
+    }
+}
+
+{{/isProtocolUUIDType}}{{/isBuildCoreData}}{{/model}}{{/models}}

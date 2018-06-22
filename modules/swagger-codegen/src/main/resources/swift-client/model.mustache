@@ -1,0 +1,29 @@
+{{#models}}{{#model}}//
+// {{classname}}.swift
+// {{appName}} {{appVersion}}
+
+import Foundation
+{{#description}}
+/// {{description}}{{/description}}{{#isBuildCoreData}}
+// Has Matching Core Data{{/isBuildCoreData}}
+
+final class {{classname}}: Codable {
+
+    // MARK: - Properties
+
+{{#vars}}{{#description}}    /// {{description}}{{/description}}
+    var {{name}}: {{{datatype}}}{{^required}}?{{/required}}{{#required}}!{{/required}}{{#defaultValue}} = {{{defaultValue}}}{{/defaultValue}}
+    
+{{/vars}}
+    
+    // MARK: - Initializer(s)
+{{#isInitRequired}}    
+    convenience init({{#vars}}{{#required}}{{name}}: {{{datatype}}}{{#hasMore}}, {{/hasMore}}{{/required}}{{/vars}}) {
+        self.init(){{#vars}}{{#required}}
+        self.{{name}} = {{name}}{{/required}}{{/vars}}
+    }
+    {{/isInitRequired}}    
+    init() {
+
+    }
+}{{/model}} {{/models}}

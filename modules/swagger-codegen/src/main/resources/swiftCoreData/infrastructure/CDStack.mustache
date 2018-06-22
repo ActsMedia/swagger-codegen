@@ -1,0 +1,188 @@
+//
+//  CoreDataStack.swift
+//  CoreDataChange
+//
+//  Created by David Solberg on 5/15/16.
+//  Copyright © 2016 David Solberg. All rights reserved.
+//
+
+import CoreData
+
+class CDStack
+{
+    // MARK: - Static Methods -
+    
+    // The default database name. Used for tracking the sqlite file, write ahead log, seed database, and Xcode model file (xcdatamodeld). The title must match for all these files.
+    static var coreDataModelName = "CoreData"
+    
+    /// On first load, which to seed the database. Requires a {coreDataModelName}.sqlite file in the bundle.
+    static var shouldSeed = false
+    
+    /// If we cannot migrate the database on model changes, then this completely deletes the old database and starts from scratch
+    static var deleteDatabaseOnMigrationFailure = true
+    
+    /// The main thread managed object context. This context will automatically merge changes from other threads property by property, keeping whatever is saved in the persistent store vs. in-memory. In other words, if another context saves something, it will override whatever's in memory.
+    static var context: NSManagedObjectContext {
+//        precondition(NSThread.isMainThread(), "This context is only for the main thread. Use childContextForPrivateQueue() for other threads.")
+        return internalInstance.context
+    }
+
+    static var coordinator: NSPersistentStoreCoordinator {
+		//        precondition(NSThread.isMainThread(), "This context is only for the main thread. Use childContextForPrivateQueue() for other threads.")
+		return internalInstance.coordinator
+	}
+    
+    /// Returns a child context from the main thread context. This context resolves merge issues by favoring what's in memory, so whatever you change in this context will win even if a different context has saved something else.
+    static func childContextForPrivateQueue() -> NSManagedObjectContext {
+        let parent = self.context
+        let context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        context.parent = parent
+        let mergePolicy = NSMergePolicy(merge: .mergeByPropertyObjectTrumpMergePolicyType)
+        context.mergePolicy = mergePolicy
+        return context
+    }
+    
+    
+    // MARK: - Internal Instance Methods -
+    
+    fileprivate static var internalInstance = CDStack()
+    
+    fileprivate let context : NSManagedObjectContext
+    fileprivate let coordinator: NSPersistentStoreCoordinator
+    fileprivate let model: NSManagedObjectModel
+    
+    init() {
+        precondition(Thread.isMainThread, "Must intialize context on the main thread.")
+        model = CDStack.createModel()
+        coordinator = CDStack.createCoordinator(model: model)
+        context = CDStack.createContext(coordinator: coordinator)
+        registerForNotifications()
+    }
+    
+	static func resetDataBase() {
+		deleteExistingDatabase()
+		internalInstance = CDStack()
+	}
+	
+    fileprivate static func deleteExistingDatabase()
+    {
+        do {
+            try FileManager.default.removeItem(at: CDStack.storeUrl)
+        } catch (let error) {
+            print(error)
+            assertionFailure("Could not delete existing database.")
+        }
+        
+        // Not always using these, so don't assert
+        let _ = try? FileManager.default.removeItem(at: CDStack.writeAheadLogUrl)
+        let _ = try? FileManager.default.removeItem(at: CDStack.indexUrl)
+        
+    }
+    
+    /// Creates the managed object context for the main thread and registers for notifications so that changes on background contexts are merged when appropriate. Must be run on the main thread.
+    fileprivate func registerForNotifications()
+    {
+        NotificationCenter.default.addObserver(self, selector: #selector(CDStack.saveNotification(_:)), name: NSNotification.Name.NSManagedObjectContextDidSave, object: nil)
+    }
+    
+    @objc func saveNotification(_ notification: Notification) {
+        guard let callContext = notification.object as? NSManagedObjectContext  else {
+            assertionFailure("Notification has no context: \(notification)")
+            return
+        }
+        
+        let checkAndMergeBlock = {
+            if !callContext.isEqual(CDStack.context) { // Don't need to merge changes from our own context
+                CDStack.context.mergeChanges(fromContextDidSave: notification)
+            }
+        }
+        
+        if Thread.isMainThread {
+            checkAndMergeBlock()
+        } else {
+            DispatchQueue.main.sync(execute: { 
+                checkAndMergeBlock()
+            })
+        }
+    }
+    
+    fileprivate static func createContext(coordinator: NSPersistentStoreCoordinator) -> NSManagedObjectContext {
+        let mainContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        // Goes property by property, if different, the saved one in the store wins (vs the in-memory version)
+        mainContext.mergePolicy = NSMergePolicy(merge: .mergeByPropertyStoreTrumpMergePolicyType)
+        mainContext.persistentStoreCoordinator = coordinator
+        return mainContext
+    }
+    
+    fileprivate static func createModel() -> NSManagedObjectModel {
+        return NSManagedObjectModel(contentsOf: momdUrl)!
+    }
+    
+    fileprivate static func createCoordinator(model: NSManagedObjectModel) -> NSPersistentStoreCoordinator {
+        let fileManager = FileManager()
+        
+        // Seed database if requested and there is no existing database
+        if CDStack.shouldSeed && !fileManager.fileExists(atPath: storeUrl.path) {
+            guard let seedUrl = Bundle.main.url(forResource: CDStack.coreDataModelName, withExtension: "sqlite") else {
+                fatalError("Seed database \(CDStack.coreDataModelName).sqlite not in bundle.")
+            }
+            
+            do {
+                try fileManager.copyItem(at: seedUrl, to: storeUrl)
+            } catch (let error) {
+                print(error)
+                fatalError("Could not move seed database \(seedUrl.path) into place at \(storeUrl.path).")
+            }
+        }
+        
+        // Perform automatic migration if possible, infering whatever it can, secure this data, but only until the user unlocks their phone for the first time after turning on (more secure data would mean that we couldn't do some stuff in the background), and don't use journaling mode.
+        let options = [NSMigratePersistentStoresAutomaticallyOption: true,
+                       NSInferMappingModelAutomaticallyOption: true,
+                       FileAttributeKey.protectionKey:FileProtectionType.completeUntilFirstUserAuthentication
+            , NSSQLitePragmasOption:["journal_mode":"DELETE"] ] as [AnyHashable : Any]
+        
+        let coordin = NSPersistentStoreCoordinator(managedObjectModel: model)
+        
+        // Add the persistent store (the database file) to the coordinator
+        do {
+            try coordin.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: storeUrl, options: options as [AnyHashable: Any])
+            return coordin
+        } catch (let error) {
+            print(error)
+        }
+        
+        // If we get here, then we failed to set the persistent store for the database, most likely because of a migration issue where the saved database had different properties, objects, associations, etc.
+        guard deleteDatabaseOnMigrationFailure else {
+            fatalError("Could not create a persistent store coordinator. Try setting deleteDatabaseOnMigrationFailure to true or write/fix the migration.")
+        }
+        
+        deleteExistingDatabase()
+        do {
+            try coordin.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: storeUrl, options: options as [AnyHashable: Any])
+            return coordin
+        } catch (let error) {
+            print(error)
+            fatalError("Could not create a persistent store coordinator even after deleting the existing database.")
+        }
+    }
+    
+    // MARK: -  Internal URLS -
+    
+    // Create a documents directory in the library folder. Do this because sometimes apps allow iTunes sharing in the main documents directory, and we probably don't want the user looking at the sqlite database.
+    static fileprivate let documentsDirectory: Foundation.URL = {
+        guard let libraryDir = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).first else {  fatalError() }
+        let documentsDir = (libraryDir as NSString).appendingPathComponent("Documents")
+        do {
+            try FileManager.default.createDirectory(atPath: documentsDir, withIntermediateDirectories: true, attributes: nil)
+        } catch (let error) {
+            print(error)
+            fatalError()
+        }
+        return Foundation.URL(fileURLWithPath: documentsDir)
+    }()
+    
+    static fileprivate let storeUrl = documentsDirectory.appendingPathComponent(coreDataModelName + ".sqlite")
+    static fileprivate let writeAheadLogUrl = documentsDirectory.appendingPathComponent(coreDataModelName + ".sqlite-wal")
+    static fileprivate let indexUrl = documentsDirectory.appendingPathComponent(coreDataModelName + ".sqlite-shm")
+    static fileprivate let momdUrl = Bundle.main.url(forResource: coreDataModelName, withExtension: "momd")!
+}

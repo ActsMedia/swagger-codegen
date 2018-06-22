@@ -1,0 +1,51 @@
+// CoreDataBuilders.swift
+// API Version {{appVersion}}
+//
+
+import Foundation
+import CoreData
+
+protocol CoreDataBuildable {
+    associatedtype T: NSManagedObject
+    func createAndOrUpdateManagedObject(in context: NSManagedObjectContext) -> T?
+}
+
+extension CoreDataBuildable {
+    
+    /// Convenience function to speed up build time
+    ///
+    /// - Parameter item: item to be unwrapped
+    /// - Returns: false if item is nil, otherwise item's unwrapped value
+    fileprivate func boolOrFalseForNil(_ item: Bool?) -> Bool {
+        guard let item = item else {
+            return false
+        }
+        return item
+    }
+}
+
+{{#models}}{{#model}}{{#isBuildCoreData}}{{#isProtocolUUIDType}}extension {{classname}}: CoreDataBuildable {
+
+    func createAndOrUpdateManagedObject(in context: NSManagedObjectContext) -> {{classname}}CD? {
+
+        guard let cd{{classname}} = {{classname}}CD.getOrCreate(for: uuid, in: context, with: boolOrFalseForNil(deleted_on_server)) else {
+            return nil;
+        }
+{{#vars}}{{^isForeignTableReferenceByUUID}}        
+        cd{{classname}}.{{name}} = {{name}}{{/isForeignTableReferenceByUUID}}{{#isForeignTableReferenceByUUID}}{{#isCreateTableLinkMethods}}{{#isToManyReference}}
+        
+        cd{{classname}}.{{referencesRelationName}} = {{referencesPropertyName}}CD.classedObjects(for: {{name}}, in: context) 
+        if cd{{classname}}.{{referencesRelationName}}?.count != {{name}}?.count {
+			print("Data integrity failure in {{classname}}. Missing connections for {{name}}: \(String(describing: {{name}}))")
+		}{{/isToManyReference}}{{^isToManyReference}}
+
+        if let uuid = {{name}}, let object: {{referencesPropertyName}}CD = {{referencesPropertyName}}CD.classedObject(for: uuid, in: context)  {
+            cd{{classname}}.{{referencesRelationName}} = object
+        } else {
+            print("******\nData integrity failure in {{classname}}. The uuid \(String(describing: uuid)) for {{name}}  could not be found.\n***********")
+        }{{/isToManyReference}}{{/isCreateTableLinkMethods}}{{/isForeignTableReferenceByUUID}}{{/vars}}
+        return cd{{classname}}
+    }
+}
+
+{{/isProtocolUUIDType}}{{/isBuildCoreData}}{{/model}}{{/models}}

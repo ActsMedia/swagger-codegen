@@ -1,0 +1,77 @@
+//
+//  SharedExamples.swift
+//  SwaggerTesting
+//
+//  Created by Paul Fechner on 3/6/17.
+//  Copyright © 2017 ActsMedia. All rights reserved.
+//
+import CoreData
+import Quick
+import Nimble
+@testable import {{appName}}_Debug
+class SwaggerComparisonConfiguration: QuickConfiguration {
+
+	override class func configure(_ configuration: Configuration) {
+		{{#models}}{{#model}}{{^isExcludedFromTests}}
+		//MARK: {{classname}}
+		
+		sharedExamples("{{classname}}Full") { (context: SharedExampleContext) in
+			describe("comparison") {
+				let leftItem = context()[leftKey] as? {{classname}}
+				let rightItem = context()[rightKey] as? {{classname}}
+
+				expect(leftItem).toNot(beNil(), description: "item")
+				expect(rightItem).toNot(beNil(), description: "item")
+
+				it("matches") { {{#vars}}{{^isExcludedFromTests}}{{^isForeignTableReferenceByUUID}}
+					expect(leftItem?.{{name}}).to(equal(rightItem?.{{name}}), description: "{{name}}"){{/isForeignTableReferenceByUUID}}{{/isExcludedFromTests}}{{/vars}}
+				}
+			}
+		}
+		sharedExamples("{{classname}}Optional") { (context: SharedExampleContext) in
+			describe("comparison") {
+				let leftItem = context()[leftKey] as? {{classname}}
+				let rightItem = context()[rightKey] as? {{classname}}
+
+				expect(leftItem).toNot(beNil(), description: "item")
+				expect(rightItem).toNot(beNil(), description: "item")
+
+				it("matches") { {{#vars}}{{^isExcludedFromTests}}{{^isForeignTableReferenceByUUID}}{{#required}}
+					expect(leftItem?.{{name}}).to(equal(rightItem?.{{name}}), description: "{{name}}"){{/required}}{{^required}}
+					expect(leftItem?.{{name}}).to(equalOrBothNil(rightItem?.{{name}}), description: "{{name}}"){{/required}}{{/isForeignTableReferenceByUUID}}{{/isExcludedFromTests}}{{/vars}}
+				}
+			}
+		}{{#isBuildCoreData}}
+		sharedExamples("{{classname}}CDFull") { (context: @escaping SharedExampleContext) in
+			describe("comparison") {
+				let leftItem = context()[leftKey] as? {{classname}}
+				var rightItem = context()[rightKey] as? {{classname}}CD
+
+				expect(leftItem).toNot(beNil(), description: "item")
+				expect(rightItem).toNot(beNil(), description: "item")
+
+				it("matches") { 
+					let cdContext = context()["CDContext"] as! NSManagedObjectContext
+					rightItem = leftItem?.createAndOrUpdateManagedObject(in: cdContext){{#vars}}{{^isExcludedFromTests}}{{^isForeignTableReferenceByUUID}}
+					expect(leftItem?.{{name}}).to(equal(rightItem?.{{name}}), description: "{{name}}"){{/isForeignTableReferenceByUUID}}{{/isExcludedFromTests}}{{/vars}}
+				}
+			}
+		}
+		sharedExamples("{{classname}}CDOptional") { (context: @escaping SharedExampleContext) in
+			describe("comparison") {
+				let leftItem = context()[leftKey] as? {{classname}}
+				var rightItem = context()[rightKey] as? {{classname}}CD
+
+				expect(leftItem).toNot(beNil(), description: "item")
+				expect(rightItem).toNot(beNil(), description: "item")
+
+				it("matches") { 
+					let cdContext = context()["CDContext"] as! NSManagedObjectContext
+					rightItem = leftItem?.createAndOrUpdateManagedObject(in: cdContext){{#vars}}{{^isExcludedFromTests}}{{^isForeignTableReferenceByUUID}}{{#required}}
+					expect(leftItem?.{{name}}).to(equal(rightItem?.{{name}}), description: "{{name}}"){{/required}}{{^required}}
+					expect(leftItem?.{{name}}).to(equalOrBothNil(rightItem?.{{name}}), description: "{{name}}"){{/required}}{{/isForeignTableReferenceByUUID}}{{/isExcludedFromTests}}{{/vars}}
+				}
+			}
+		}{{/isBuildCoreData}}{{/isExcludedFromTests}}{{/model}}{{/models}}
+	}
+}

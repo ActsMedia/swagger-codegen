@@ -1,0 +1,36 @@
+// API Version {{appVersion}}
+// Generated: {{generatedDate}}
+
+import Foundation
+import CoreData
+{{#models}}{{#model}}{{#isBuildCoreData}}
+
+//
+// -------------- {{classname}}CD --------------
+//
+
+@objc({{classname}}CD)
+class {{classname}}CD: NSManagedObject {
+
+{{#vars}}{{^isForeignTableReferenceByUUID}}{{^isPrimitiveType}}    @NSManaged var {{name}}: {{datatype}}{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/isPrimitiveType}}{{#isPrimitiveType}}        var {{name}}: {{datatype}}{{^required}}?{{/required}}{{#required}}!{{/required}} {
+            // Getters and setters required to make it possible to have optional primitive types.
+            get {
+                willAccessValue(forKey: "{{name}}")
+                let value = primitiveValue(forKey: "{{name}}") as? {{datatype}}
+                didAccessValue(forKey: "{{name}}")
+                return value
+            }
+            set {
+                willChangeValue(forKey: "{{name}}")
+                let value: {{datatype}}? = newValue ?? nil
+                setPrimitiveValue(value, forKey: "{{name}}")
+                didChangeValue(forKey: "{{name}}")
+            }
+        }
+{{/isPrimitiveType}}{{/isForeignTableReferenceByUUID}}{{#isForeignTableReferenceByUUID}}{{#isToManyReference}}        @NSManaged var {{referencesRelationName}}: Set<{{referencesPropertyName}}CD>{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/isToManyReference}}
+{{^isToManyReference}}
+        @NSManaged var {{referencesRelationName}}: {{referencesPropertyName}}CD{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/isToManyReference}}{{/isForeignTableReferenceByUUID}}{{/vars}}
+}{{/isBuildCoreData}}{{/model}}{{/models}}

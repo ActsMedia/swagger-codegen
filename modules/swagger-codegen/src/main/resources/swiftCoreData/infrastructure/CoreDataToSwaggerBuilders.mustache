@@ -1,0 +1,35 @@
+// CoreDataToSwaggerBuilders.swift
+// API Version {{appVersion}}
+//
+
+import Foundation
+import CoreData
+
+protocol CoreDataToSwaggerBuildable {
+	associatedtype Swagger: CoreDataBuildable
+    func asSwaggerModel() -> Swagger
+}
+
+{{#models}}{{#model}}{{#isBuildCoreData}}{{#isProtocolUUIDType}}extension {{classname}}CD: CoreDataToSwaggerBuildable {
+
+    func asSwaggerModel() -> {{classname}} {
+        let swagger_{{classname}} = {{classname}}()
+
+{{#vars}}{{^isForeignTableReferenceByUUID}}        swagger_{{classname}}.{{name}} = {{name}}
+{{/isForeignTableReferenceByUUID}}
+{{#isForeignTableReferenceByUUID}}{{#isToManyReference}}
+        if let items = {{referencesRelationName}} {
+            swagger_{{classname}}.{{name}} = items.map { $0.uuid }
+        }
+{{/isToManyReference}}
+{{^isToManyReference}}
+        if let item = {{referencesRelationName}} {
+            swagger_{{classname}}.{{name}} = item.uuid
+        }
+
+{{/isToManyReference}}{{/isForeignTableReferenceByUUID}}{{/vars}}
+        return swagger_{{classname}}
+    }
+}
+
+{{/isProtocolUUIDType}}{{/isBuildCoreData}}{{/model}}{{/models}}

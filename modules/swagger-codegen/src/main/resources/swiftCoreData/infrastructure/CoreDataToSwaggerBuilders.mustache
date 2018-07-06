@@ -10,26 +10,26 @@ protocol CoreDataToSwaggerBuildable {
     func asSwaggerModel() -> Swagger
 }
 
-{{#models}}{{#model}}{{#isBuildCoreData}}{{#isProtocolUUIDType}}extension {{classname}}CD: CoreDataToSwaggerBuildable {
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#isProtocolUUIDType}}extension {{databaseModelName}}: CoreDataToSwaggerBuildable {
 
     func asSwaggerModel() -> {{classname}} {
         let swagger_{{classname}} = {{classname}}()
 
-{{#vars}}{{^isForeignTableReferenceByUUID}}        swagger_{{classname}}.{{name}} = {{name}}
-{{/isForeignTableReferenceByUUID}}
-{{#isForeignTableReferenceByUUID}}{{#isToManyReference}}
+{{#vars}}{{^databaseIsRelation}}        swagger_{{classname}}.{{name}} = {{name}}
+{{/databaseIsRelation}}
+{{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}
         if let items = {{referencesRelationName}} {
             swagger_{{classname}}.{{name}} = items.map { $0.uuid }
         }
-{{/isToManyReference}}
-{{^isToManyReference}}
+{{/databaseRelationIsToManyReference}}
+{{^databaseRelationIsToManyReference}}
         if let item = {{referencesRelationName}} {
             swagger_{{classname}}.{{name}} = item.uuid
         }
 
-{{/isToManyReference}}{{/isForeignTableReferenceByUUID}}{{/vars}}
+{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
         return swagger_{{classname}}
     }
 }
 
-{{/isProtocolUUIDType}}{{/isBuildCoreData}}{{/model}}{{/models}}
+{{/isProtocolUUIDType}}{{/isDatabaseModel}}{{/model}}{{/models}}

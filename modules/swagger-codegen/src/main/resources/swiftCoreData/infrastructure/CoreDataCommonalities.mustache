@@ -6,8 +6,8 @@ import Foundation
 import CoreData
 
 // MARK - Conform to Protocols From Swagger
-{{#models}}{{#model}}{{#isBuildCoreData}}extension {{classname}}CD: Findable{{#isProtocolUUIDType}}, UUIDType{{/isProtocolUUIDType}}{{#isProtocolSortOrderType}}, SortOrderType{{/isProtocolSortOrderType}}{{#isProtocolNameType}}, NameType{{/isProtocolNameType}}{{#isProtocolSoftDeletableType}}, SoftDeletableType{{/isProtocolSoftDeletableType}} {}
-{{/isBuildCoreData}}{{/model}}{{/models}}
+{{#models}}{{#model}}{{#isDatabaseModel}}extension {{databaseModelName}}: Findable{{#isProtocolUUIDType}}, UUIDType{{/isProtocolUUIDType}}{{#isProtocolSortOrderType}}, SortOrderType{{/isProtocolSortOrderType}}{{#isProtocolNameType}}, NameType{{/isProtocolNameType}}{{#isProtocolSoftDeletableType}}, SoftDeletableType{{/isProtocolSoftDeletableType}} {}
+{{/isDatabaseModel}}{{/model}}{{/models}}
 
 // Findable Protocol - All Core Data Items are Findable
 protocol Findable: class { }

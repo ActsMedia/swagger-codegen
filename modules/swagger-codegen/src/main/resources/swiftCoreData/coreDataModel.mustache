@@ -1,18 +1,17 @@
-// API Version {{appVersion}}
-// Generated: {{generatedDate}}
-
+{{#models}}{{#model}}{{#isDatabaseModel}}
+//Is database model
 import Foundation
 import CoreData
-{{#models}}{{#model}}{{#isBuildCoreData}}
+
 
 //
-// -------------- {{classname}}CD --------------
+// -------------- {{databaseModelName}} --------------
 //
 
-@objc({{classname}}CD)
-class {{classname}}CD: NSManagedObject {
+@objc({{databaseModelName}})
+class {{databaseModelName}}: NSManagedObject {
 
-{{#vars}}{{^isForeignTableReferenceByUUID}}{{^isPrimitiveType}}    @NSManaged var {{name}}: {{datatype}}{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{#vars}}{{^databaseIsRelation}}{{^isPrimitiveType}}    @NSManaged var {{name}}: {{datatype}}{{^required}}?{{/required}}{{#required}}!{{/required}}
 {{/isPrimitiveType}}{{#isPrimitiveType}}        var {{name}}: {{datatype}}{{^required}}?{{/required}}{{#required}}!{{/required}} {
             // Getters and setters required to make it possible to have optional primitive types.
             get {
@@ -28,9 +27,9 @@ class {{classname}}CD: NSManagedObject {
                 didChangeValue(forKey: "{{name}}")
             }
         }
-{{/isPrimitiveType}}{{/isForeignTableReferenceByUUID}}{{#isForeignTableReferenceByUUID}}{{#isToManyReference}}        @NSManaged var {{referencesRelationName}}: Set<{{referencesPropertyName}}CD>{{^required}}?{{/required}}{{#required}}!{{/required}}
-{{/isToManyReference}}
-{{^isToManyReference}}
-        @NSManaged var {{referencesRelationName}}: {{referencesPropertyName}}CD{{^required}}?{{/required}}{{#required}}!{{/required}}
-{{/isToManyReference}}{{/isForeignTableReferenceByUUID}}{{/vars}}
-}{{/isBuildCoreData}}{{/model}}{{/models}}
+{{/isPrimitiveType}}{{/databaseIsRelation}}{{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}        @NSManaged var {{databaseRelationPropertyName}}: Set<{{databaseRelationModelType}}>{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/databaseRelationIsToManyReference}}
+{{^databaseRelationIsToManyReference}}
+        @NSManaged var {{databaseRelationPropertyName}}: {{databaseRelationModelType}}{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
+}{{/isDatabaseModel}}{{/model}}{{/models}}

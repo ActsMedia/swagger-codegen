@@ -4,6 +4,8 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+import io.swagger.codegen.CodegenModelFactory;
+import io.swagger.codegen.CodegenModelType;
 import io.swagger.codegen.CliOption;
 import io.swagger.codegen.CodegenConfig;
 import io.swagger.codegen.CodegenConstants;
@@ -62,18 +64,24 @@ public class SwiftCoreDataCodegen extends AbstractSwiftCodegen implements Codege
         embeddedTemplateDir = templateDir = "swiftCoreData";
         apiPackage = File.separator + "APIs";
         modelPackage = File.separator + "Models";
+
+        CodegenModelFactory.setTypeMapping(CodegenModelType.PROPERTY, DatabaseCodegenProperty.class);
+        CodegenModelFactory.setTypeMapping(CodegenModelType.MODEL, DatabaseCodegenModel.class);
     }
 
     @Override
     public void processOpts() {
         super.processOpts();
         final String infrastructureFolder = (sourceFolder  + File.separator + "infrastructure").replace(".", "/");
+        final String xcdatamodelFolder = infrastructureFolder + File.separator + "CoreData.xcdatamodeld";
         
         supportingFiles.add(new SupportingFile("infrastructure/CDStack.mustache", infrastructureFolder, "CDStack.swift"));
         supportingFiles.add(new SupportingFile("infrastructure/CoreDataBuilders.mustache", infrastructureFolder, "CoreDataBuilders.swift"));
         supportingFiles.add(new SupportingFile("infrastructure/CoreDataChangeCheckers.mustache", infrastructureFolder, "CoreDataChangeCheckers.swift"));
-        supportingFiles.add(new SupportingFile("infrastructure/CDStack.CoreDataCommonalities", infrastructureFolder, "CoreDataCommonalities.swift"));
+        supportingFiles.add(new SupportingFile("infrastructure/CoreDataCommonalities.mustache", infrastructureFolder, "CoreDataCommonalities.swift"));
         supportingFiles.add(new SupportingFile("infrastructure/CoreDataToSwaggerBuilders.mustache", infrastructureFolder, "CoreDataToSwaggerBuilders.swift"));
+        supportingFiles.add(new SupportingFile("xccurrentversion.mustache", xcdatamodelFolder, ".xccurrentversion"));
+        supportingFiles.add(new SupportingFile("xcdatamodel.mustache", xcdatamodelFolder + File.separator + "CoreData.xcdatamodel", "contents"));
     }
     
    /**
@@ -84,43 +92,19 @@ public class SwiftCoreDataCodegen extends AbstractSwiftCodegen implements Codege
      */
     @Override
     public String toModelFilename(String name) {
-        return DefaultCodegen.camelize(name) + "CD";
+        return DefaultCodegen.camelize(name) + "Entity";
     }
 
     // overridden to post-process any property properties
     @Override
     public void postProcessModelProperty(CodegenModel model, CodegenProperty property){
+        super.postProcessModelProperty(model, property);
 
         if (property == null || !(property instanceof DatabaseCodegenProperty)) {
             return;
         }
         DatabaseCodegenProperty typedProperty = (DatabaseCodegenProperty) property;
         typedProperty.processCustomProperties();
-        
-        super.postProcessModelProperty(model, property);
-
-        // The default template code has the following logic for
-        // assigning a type as Swift Optional:
-        //
-        // {{^unwrapRequired}}?{{/unwrapRequired}}
-        // {{#unwrapRequired}}{{^required}}?{{/required}}{{/unwrapRequired}}
-        //
-        // which means:
-        //
-        // boolean isSwiftOptional = !unwrapRequired || (unwrapRequired && !property.required);
-        //
-        // We can drop the check for unwrapRequired in (unwrapRequired && !property.required)
-        // due to short-circuit evaluation of the || operator.
-        boolean isSwiftOptional = !unwrapRequired || !property.required;
-        boolean isSwiftScalarType = property.isInteger || property.isLong || property.isFloat
-                                    || property.isDouble || property.isBoolean;
-        if (isSwiftOptional && isSwiftScalarType) {
-            // Optional scalar types like Int?, Int64?, Float?, Double?, and Bool?
-            // do not translate to Objective-C. So we want to flag those
-            // properties in case we want to put special code in the templates
-            // which provide Objective-C compatibility.
-            property.vendorExtensions.put("x-swift-optional-scalar", true);
-        }        
     }
 
     //Overridden to post-process any model properties.

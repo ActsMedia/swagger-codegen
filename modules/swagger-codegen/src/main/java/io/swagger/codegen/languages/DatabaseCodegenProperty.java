@@ -68,6 +68,7 @@ public class DatabaseCodegenProperty extends CodegenProperty {
     //Other
 
     public String nameInCamelCaseFirstLetterLower;
+    public String datatypeForXCDataModel;
 
     public void processCustomProperties(){
         
@@ -82,7 +83,9 @@ public class DatabaseCodegenProperty extends CodegenProperty {
             this.databaseIsRelation = (Boolean) jsonData.get("x-database-is-relation");
             this.databaseRelationIsToManyReference = (Boolean) jsonData.get("x-database-relation-is-to-many-reference");
             this.databaseRelationIsManyToManyReference = (Boolean) jsonData.get("x-database-relation-is-many-to-many-reference");
-            
+            if((this.databaseRelationIsToManyReference != null && this.databaseRelationIsToManyReference) || (this.databaseRelationIsManyToManyReference != null && this.databaseRelationIsManyToManyReference)) {
+                this.databaseIsRelation = true;
+            }
             this.databaseRelationModelType = (String) jsonData.get("x-database-relation-model-type");
             this.databaseRelationPropertyName = (String) jsonData.get("x-database-relation-property-name");
             this.databaseRelationForeignPropertyName = (String) jsonData.get("x-database-relation-foreign-property-name");
@@ -94,13 +97,66 @@ public class DatabaseCodegenProperty extends CodegenProperty {
             this.isSoftDeletableProperty = (Boolean) jsonData.get("x-is-soft-deletable-property");
             this.isUUIDProperty = (Boolean) jsonData.get("x-is-uuid-property");
 
-
             //Testing
             this.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
 
             //Other
             this.nameInCamelCaseFirstLetterLower = DefaultCodegen.camelize(name, true);
 
-        } catch (IOException e) {}
+            if(datatype != null) {
+                switch (datatype) {
+                    case "array":
+                    case "List":
+                    case "map":
+                    case "Array":
+                    case "Dictionary":
+                        this.datatypeForXCDataModel = "Transformable";
+                        break;
+                    case "date":
+                    case "Date":
+                    case "DateTime":
+                        this.datatypeForXCDataModel = "Boolean";
+                        break;
+                    case "boolean":
+                        this.datatypeForXCDataModel = "Transformable";
+                        break;
+                    case "string":
+                    case "char":
+                    case "object":
+                        this.datatypeForXCDataModel = "String";
+                        break;
+                    case "short":
+                    case "Int32":
+                        this.datatypeForXCDataModel = "Integer 32";
+                        break;
+                    case "Int":
+                    case "int":
+                    case "Int64":
+                    case "long":
+                    case "integer":
+                    case "Integer":
+                        this.datatypeForXCDataModel = "Integer 64";
+                        break;
+                    case "Double":
+                    case "float":
+                    case "number":
+                    case "double":
+                        this.datatypeForXCDataModel = "Double";
+                        break;
+                    case "file":
+                    case "URL":
+                    case "Data":
+                        this.datatypeForXCDataModel = "Binary";
+                        break;
+                    default:
+                        this.datatypeForXCDataModel = this.datatype;
+                        break;
+                }
+            }
+            
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

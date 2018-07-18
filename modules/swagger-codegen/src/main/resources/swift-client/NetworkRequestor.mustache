@@ -126,12 +126,12 @@ class SwaggerNetworkRequestor: NetworkRequestor {
 			//                assertionFailure("We got an invalid response code \(httpResponse.statusCode)")
 			let errorInfo: Any?
 			if let data = data, let dataText = String(data: data, encoding: .utf8) {
-                if let errorType = try? Swagger_error.decodeJSON(from: dataText) {
-                    errorInfo = errorType
-                }
-                else {
+                //if let errorType = try? Swagger_error.decodeJSON(from: dataText) {
+                //    errorInfo = errorType
+                //}
+                //else {
                     errorInfo = dataText;
-                }
+               // }
 			} else {
 				errorInfo = nil
 			}

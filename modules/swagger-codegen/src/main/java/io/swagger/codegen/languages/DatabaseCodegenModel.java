@@ -36,6 +36,8 @@ public class DatabaseCodegenModel extends CodegenModel {
     public Boolean isProtocolSortOrderType; // x-protocol-sort-order-type
     public Boolean isProtocolNameType; // x-protocol-name-type
     public Boolean isProtocolSoftDeletableType; // x-protocol-soft-deleteable-type
+
+    public Boolean useDefaultPropertyNames; // x-use-default-property-names
     
     //Testing 
 
@@ -76,6 +78,7 @@ public class DatabaseCodegenModel extends CodegenModel {
 
             //Other
             this.isInitRequired = (Boolean) jsonData.get("x-init-required");
+            this.useDefaultPropertyNames = (Boolean) jsonData.get("x-use-default-property-names");
             if(isDatabaseGeneration) {
                 imports.add("Infrastructure");
 

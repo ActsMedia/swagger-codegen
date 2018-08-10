@@ -12,7 +12,11 @@ struct {{classname}}: Codable, Equatable {
     // MARK: - Properties
 
 {{#vars}}{{#description}}    /// {{description}}{{/description}}
-    var {{name}}: {{{datatype}}}{{^required}}?{{/required}}{{#defaultValue}} = {{{defaultValue}}}{{/defaultValue}}
-    
+    var {{nameInCamelCase}}: {{{datatype}}}{{^required}}?{{/required}}{{#defaultValue}} = {{{defaultValue}}}{{/defaultValue}}
+
 {{/vars}}
+
+    {{^vendorExtensions.x-use-default-property-names}}enum CodingKeys: String, CodingKey { {{#vars}}
+        case {{{nameInCamelCase}}} = "{{name}}"{{/vars}}
+    }{{/vendorExtensions.x-use-default-property-names}}
 }{{/model}} {{/models}}

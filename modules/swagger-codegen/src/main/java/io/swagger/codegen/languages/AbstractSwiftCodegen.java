@@ -27,6 +27,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +40,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import java.util.Map.Entry;
 
 abstract public class AbstractSwiftCodegen extends DefaultCodegen implements CodegenConfig {
     public static final String PROJECT_NAME = "projectName";
@@ -472,7 +475,7 @@ abstract public class AbstractSwiftCodegen extends DefaultCodegen implements Cod
     @Override
     public String toVarName(String name) {
         // sanitize name
-        name = sanitizeName(name);
+        // name = sanitizeName(name);
 
         // if it's all uppper case, do nothing
         if (name.matches("^[A-Z_]*$")) {
@@ -481,12 +484,12 @@ abstract public class AbstractSwiftCodegen extends DefaultCodegen implements Cod
 
         // camelize the variable name
         // pet_id => petId
-        name = camelize(name, true);
+        // name = camelize(name, true);
 
         // for reserved word or word starting with number, append _
-        if (isReservedWord(name) || name.matches("^\\d.*")) {
-            name = escapeReservedWord(name);
-        }
+        // if (isReservedWord(name) || name.matches("^\\d.*")) {
+        //     name = escapeReservedWord(name);
+        // }
 
         return name;
     }
@@ -681,6 +684,24 @@ abstract public class AbstractSwiftCodegen extends DefaultCodegen implements Cod
             }
             if (modelHasPropertyWithEscapedName) {
                 cm.vendorExtensions.put("x-codegen-has-escaped-property-names", true);
+            }
+
+            if(cm == null) {
+                continue;
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                Map<String,Object> jsonData = mapper.readValue(cm.modelJson, Map.class);
+                
+                if(jsonData.containsKey("x-use-default-property-names")) {
+                    Boolean useDefaultNames = (Boolean) jsonData.get("x-use-default-property-names");
+                    cm.vendorExtensions.put("x-use-default-property-names", useDefaultNames);
+                }
+    
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+                // throw e;
             }
         }
 

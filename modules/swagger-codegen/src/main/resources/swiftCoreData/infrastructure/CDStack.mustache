@@ -184,5 +184,5 @@ class CDStack
     static fileprivate let storeUrl = documentsDirectory.appendingPathComponent(coreDataModelName + ".sqlite")
     static fileprivate let writeAheadLogUrl = documentsDirectory.appendingPathComponent(coreDataModelName + ".sqlite-wal")
     static fileprivate let indexUrl = documentsDirectory.appendingPathComponent(coreDataModelName + ".sqlite-shm")
-    static fileprivate let momdUrl = Bundle.main.url(forResource: coreDataModelName, withExtension: "momd")!
+    static fileprivate let momdUrl = DBConst.DatabaseBundle.url(forResource: coreDataModelName, withExtension: "momd")!
 }

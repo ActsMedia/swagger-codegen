@@ -115,10 +115,11 @@ public class DatabaseCodegenProperty extends CodegenProperty {
                     case "date":
                     case "Date":
                     case "DateTime":
-                        this.datatypeForXCDataModel = "Boolean";
+                        this.datatypeForXCDataModel = "Date";
                         break;
+                    case "Bool":
                     case "boolean":
-                        this.datatypeForXCDataModel = "Transformable";
+                        this.datatypeForXCDataModel = "Boolean";
                         break;
                     case "string":
                     case "char":

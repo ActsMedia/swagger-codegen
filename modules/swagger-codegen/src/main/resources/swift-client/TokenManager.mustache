@@ -37,7 +37,7 @@ class Token {
 
     // MARK: - Exposed Variables
 
-    open static var header : String? {
+    public static var header : String? {
         get { return sharedInstance._header }
         set { sharedInstance._header = newValue }
     }
@@ -47,7 +47,7 @@ class Token {
         set { sharedInstance._refresh = newValue }
     }
 
-    open static func reset() {
+    public static func reset() {
         header = nil
         refresh = nil
     }

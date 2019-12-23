@@ -12,23 +12,23 @@ protocol CoreDataToSwaggerBuildable {
 
 {{#models}}{{#model}}{{#isDatabaseModel}}{{#isProtocolUUIDType}}extension {{databaseModelName}}: CoreDataToSwaggerBuildable {
 
-    func asSwaggerModel() -> {{classname}} {
-        let swagger_{{classname}} = {{classname}}()
+    func asSwaggerModel() -> {{plainClassName}} {
+        var swagger_{{plainClassName}} = {{plainClassName}}()
 
-{{#vars}}{{^databaseIsRelation}}        swagger_{{classname}}.{{name}} = {{name}}
+{{#vars}}{{^databaseIsRelation}}        swagger_{{plainClassName}}.{{nameInCamelCase}} = {{nameInCamelCase}}
 {{/databaseIsRelation}}
 {{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}
-        if let items = {{referencesRelationName}} {
-            swagger_{{classname}}.{{name}} = items.map { $0.uuid }
+        if let items = {{databaseRelationPropertyName}} {
+            swagger_{{plainClassName}}.{{nameInCamelCase}} = items.map { $0.uuid }
         }
 {{/databaseRelationIsToManyReference}}
 {{^databaseRelationIsToManyReference}}
-        if let item = {{referencesRelationName}} {
-            swagger_{{classname}}.{{name}} = item.uuid
+        if let item = {{databaseRelationPropertyName}} {
+            swagger_{{plainClassName}}.{{nameInCamelCase}} = item.uuid
         }
 
 {{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
-        return swagger_{{classname}}
+        return swagger_{{plainClassName}}
     }
 }
 

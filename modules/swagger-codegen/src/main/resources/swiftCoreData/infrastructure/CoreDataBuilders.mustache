@@ -24,27 +24,27 @@ extension CoreDataBuildable {
     }
 }
 
-{{#models}}{{#model}}{{#isDatabaseModel}}{{#isProtocolUUIDType}}extension {{classname}}: CoreDataBuildable {
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#isProtocolUUIDType}}extension {{plainClassName}}: CoreDataBuildable {
 
     func createAndOrUpdateManagedObject(in context: NSManagedObjectContext) -> {{databaseModelName}}? {
 
-        guard let cd{{classname}} = {{databaseModelName}}.getOrCreate(for: uuid, in: context, with: boolOrFalseForNil(deleted_on_server)) else {
+        guard let cd{{plainClassName}} = {{databaseModelName}}.getOrCreate(for: uuid, in: context, with: {{^isProtocolSoftDeletableType}} false){{/isProtocolSoftDeletableType}}{{#isProtocolSoftDeletableType}}boolOrFalseForNil(deleted_on_server)){{/isProtocolSoftDeletableType}} else {
             return nil;
         }
 {{#vars}}{{^databaseIsRelation}}        
-        cd{{classname}}.{{name}} = {{name}}{{/databaseIsRelation}}{{#databaseIsRelation}}{{#databaseRelationCreateLinkMethods}}{{#databaseRelationIsToManyReference}}
+        cd{{plainClassName}}.{{nameInCamelCase}} = {{nameInCamelCase}}{{/databaseIsRelation}}{{#databaseIsRelation}}{{#databaseRelationCreateLinkMethods}}{{#databaseRelationIsToManyReference}}
         
-        cd{{classname}}.{{databaseRelationPropertyName}} = {{databaseRelationModelType}}.classedObjects(for: {{name}}, in: context) 
-        if cd{{classname}}.{{databaseRelationPropertyName}}?.count != {{name}}?.count {
-			print("Data integrity failure in {{classname}}. Missing connections for {{name}}: \(String(describing: {{name}}))")
+        cd{{plainClassName}}.{{databaseRelationPropertyName}} = {{databaseRelationModelType}}.classedObjects(for: {{name}}, in: context) 
+        if cd{{plainClassName}}.{{databaseRelationPropertyName}}?.count != {{name}}?.count {
+			print("Data integrity failure in {{plainClassName}}. Missing connections for {{name}}: \(String(describing: {{name}}))")
 		}{{/databaseRelationIsToManyReference}}{{^databaseRelationIsToManyReference}}
 
         if let uuid = {{name}}, let object: {{databaseRelationModelType}} = {{databaseRelationModelType}}.classedObject(for: uuid, in: context)  {
-            cd{{classname}}.{{databaseRelationPropertyName}} = object
+            cd{{plainClassName}}.{{databaseRelationPropertyName}} = object
         } else {
-            print("******\nData integrity failure in {{classname}}. The uuid \(String(describing: uuid)) for {{name}}  could not be found.\n***********")
+            print("******\nData integrity failure in {{plainClassName}}. The uuid \(String(describing: uuid)) for {{name}}  could not be found.\n***********")
         }{{/databaseRelationIsToManyReference}}{{/databaseRelationCreateLinkMethods}}{{/databaseIsRelation}}{{/vars}}
-        return cd{{classname}}
+        return cd{{plainClassName}}
     }
 }
 

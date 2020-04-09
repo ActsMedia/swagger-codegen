@@ -75,10 +75,10 @@ public class SwiftCoreDataCodegen extends AbstractSwiftCodegen implements Codege
         final String infrastructureFolder = (sourceFolder  + File.separator + "infrastructure").replace(".", "/");
         final String xcdatamodelFolder = infrastructureFolder + File.separator + "CoreData.xcdatamodeld";
         
-        supportingFiles.add(new SupportingFile("infrastructure/CDStack.mustache", infrastructureFolder, "CDStack.swift"));
+        // supportingFiles.add(new SupportingFile("infrastructure/CDStack.mustache", infrastructureFolder, "CDStack.swift"));
         supportingFiles.add(new SupportingFile("infrastructure/CoreDataBuilders.mustache", infrastructureFolder, "CoreDataBuilders.swift"));
-        supportingFiles.add(new SupportingFile("infrastructure/CoreDataChangeCheckers.mustache", infrastructureFolder, "CoreDataChangeCheckers.swift"));
-        supportingFiles.add(new SupportingFile("infrastructure/CoreDataCommonalities.mustache", infrastructureFolder, "CoreDataCommonalities.swift"));
+        // supportingFiles.add(new SupportingFile("infrastructure/CoreDataChangeCheckers.mustache", infrastructureFolder, "CoreDataChangeCheckers.swift"));
+        // supportingFiles.add(new SupportingFile("infrastructure/CoreDataCommonalities.mustache", infrastructureFolder, "CoreDataCommonalities.swift"));
         supportingFiles.add(new SupportingFile("infrastructure/CoreDataToSwaggerBuilders.mustache", infrastructureFolder, "CoreDataToSwaggerBuilders.swift"));
         supportingFiles.add(new SupportingFile("xccurrentversion.mustache", xcdatamodelFolder, ".xccurrentversion"));
         supportingFiles.add(new SupportingFile("xcdatamodel.mustache", xcdatamodelFolder + File.separator + "CoreData.xcdatamodel", "contents"));

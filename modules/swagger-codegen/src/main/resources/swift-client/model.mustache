@@ -11,9 +11,8 @@ struct {{classname}}: Codable, Equatable {
 
     // MARK: - Properties
 
-{{#vars}}{{#description}}    /// {{description}}{{/description}}
-    var {{nameInCamelCase}}: {{{datatype}}}{{^required}}?{{/required}}{{#defaultValue}} = {{{defaultValue}}}{{/defaultValue}}
-
+{{#vars}}    /** {{description}} */
+    var {{nameInCamelCase}}: {{{datatype}}}{{^required}}?{{/required}}{{#required}}{{#isIDProperty}}!{{/isIDProperty}}{{/required}}{{#defaultValue}} = {{{defaultValue}}}{{/defaultValue}}
 {{/vars}}
 
     {{^vendorExtensions.x-use-default-property-names}}enum CodingKeys: String, CodingKey { {{#vars}}

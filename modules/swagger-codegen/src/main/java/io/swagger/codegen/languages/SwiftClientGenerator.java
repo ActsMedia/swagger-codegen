@@ -67,6 +67,18 @@ public class SwiftClientGenerator extends AbstractSwiftCodegen implements Codege
         modelPackage = File.separator + "Models";
     }
 
+    // overridden to post-process any property properties
+    @Override
+    public void postProcessModelProperty(CodegenModel model, CodegenProperty property){
+        super.postProcessModelProperty(model, property);
+
+        if (property == null || !(property instanceof DatabaseCodegenProperty)) {
+            return;
+        }
+        DatabaseCodegenProperty typedProperty = (DatabaseCodegenProperty) property;
+        typedProperty.processCustomProperties();
+    }
+
     @Override
     public void processOpts() {
         super.processOpts();

@@ -3,33 +3,18 @@
 //
 
 import Foundation
-import CoreData
+import EntityUtilities
 
-protocol CoreDataToSwaggerBuildable {
-	associatedtype Swagger: CoreDataBuildable
-    func asSwaggerModel() -> Swagger
-}
+//MARK: - TypeInitable adherance
+{{#models}}{{#model}}{{#isDatabaseModel}}extension {{plainClassName}}: TypeInitable {
 
-{{#models}}{{#model}}{{#isDatabaseModel}}{{#isProtocolUUIDType}}extension {{databaseModelName}}: CoreDataToSwaggerBuildable {
-
-    func asSwaggerModel() -> {{plainClassName}} {
-        var swagger_{{plainClassName}} = {{plainClassName}}()
-
-{{#vars}}{{^databaseIsRelation}}        swagger_{{plainClassName}}.{{nameInCamelCase}} = {{nameInCamelCase}}
-{{/databaseIsRelation}}
-{{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}
-        if let items = {{databaseRelationPropertyName}} {
-            swagger_{{plainClassName}}.{{nameInCamelCase}} = items.map { $0.uuid }
-        }
-{{/databaseRelationIsToManyReference}}
-{{^databaseRelationIsToManyReference}}
-        if let item = {{databaseRelationPropertyName}} {
-            swagger_{{plainClassName}}.{{nameInCamelCase}} = item.uuid
-        }
-
-{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
-        return swagger_{{plainClassName}}
+    init(with model: {{databaseModelName}}) {
+        {{#vars}}{{^databasePropertyIsRelationship}}
+        self.{{nameInCamelCase}} = model.{{nameInCamelCase}}{{/databasePropertyIsRelationship}}{{/vars}}{{#databaseIsIdentifiable}}{{#vars}}{{^isNestedModelRelation}}{{#databaseToOneRelation}}
+        self.{{nameInCamelCase}} = model.{{databaseRelationPropertyName}}{{^required}}?{{/required}}.id{{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        self.{{nameInCamelCase}} = model.{{databaseRelationPropertyName}}{{^required}}?{{/required}}.compactMap{$0.id}{{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{#isNestedModelRelation}}{{#databaseToOneRelation}}
+        self.{{nameInCamelCase}} = {{datatype}}(with: model.{{databaseRelationPropertyName}}){{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        self.{{nameInCamelCase}} = model.{{databaseRelationPropertyName}}{{^required}}?{{/required}}.compactMap { .init(with: $0) }{{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{/vars}}{{/databaseIsIdentifiable}}
     }
 }
-
-{{/isProtocolUUIDType}}{{/isDatabaseModel}}{{/model}}{{/models}}
+{{/isDatabaseModel}}{{/model}}{{/models}}

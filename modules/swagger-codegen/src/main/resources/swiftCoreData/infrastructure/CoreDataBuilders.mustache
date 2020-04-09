@@ -1,51 +1,55 @@
 // CoreDataBuilders.swift
 // API Version {{appVersion}}
 //
+// Generated code to implement the update/creation logic needed by the CoreData Models
 
 import Foundation
 import CoreData
+import EntityUtilities
 
-protocol CoreDataBuildable {
-    associatedtype T: NSManagedObject
-    func createAndOrUpdateManagedObject(in context: NSManagedObjectContext) -> T?
+//MARK: - Protocol Declaration
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#databaseIsIdentifiable}}extension {{databaseModelName}}: ModelBuildingEntity & CoreDataEntity { typealias StorageDriver = NSManagedObjectContext }
+extension {{plainClassName}}: Identifiable { }
+{{/databaseIsIdentifiable}}{{^databaseIsIdentifiable}}extension {{databaseModelName}}: ModelUpdatable { }
+{{/databaseIsIdentifiable}}{{#databaseShouldGenerateRelationLinks}}extension {{databaseModelName}}: RelationalEntity { } 
+{{/databaseShouldGenerateRelationLinks}}{{/isDatabaseModel}}{{/model}}{{/models}}
+
+//MARK: - IdentifiableEntity Adherance
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#databaseIsIdentifiable}}extension {{databaseModelName}} {
+{{#vars}}{{#isIDProperty}}    var id: {{datatype}} { {{nameInCamelCase}} }
+    static var idPropertyName: String { "{{nameInCamelCase}}" }
+}
+extension {{plainClassName}} {
+    var id: {{datatype}} { {{nameInCamelCase}} }
 }
 
-extension CoreDataBuildable {
-    
-    /// Convenience function to speed up build time
-    ///
-    /// - Parameter item: item to be unwrapped
-    /// - Returns: false if item is nil, otherwise item's unwrapped value
-    fileprivate func boolOrFalseForNil(_ item: Bool?) -> Bool {
-        guard let item = item else {
-            return false
-        }
-        return item
+{{/isIDProperty}}{{/vars}}{{/databaseIsIdentifiable}}{{/isDatabaseModel}}{{/model}}{{/models}}
+//MARK: - ModelUpdatable Implementations
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}extension {{databaseModelName}} {
+    func update(from model: {{plainClassName}}) {
+{{#vars}}{{^databasePropertyIsRelationship}}        {{nameInCamelCase}} = model.{{nameInCamelCase}}
+        {{/databasePropertyIsRelationship}}{{/vars}}
     }
 }
 
-{{#models}}{{#model}}{{#isDatabaseModel}}{{#isProtocolUUIDType}}extension {{plainClassName}}: CoreDataBuildable {
+{{/isDatabaseModel}}{{/model}}{{/models}}
+//MARK: - RelationalEntity Implementations
 
-    func createAndOrUpdateManagedObject(in context: NSManagedObjectContext) -> {{databaseModelName}}? {
 
-        guard let cd{{plainClassName}} = {{databaseModelName}}.getOrCreate(for: uuid, in: context, with: {{^isProtocolSoftDeletableType}} false){{/isProtocolSoftDeletableType}}{{#isProtocolSoftDeletableType}}boolOrFalseForNil(deleted_on_server)){{/isProtocolSoftDeletableType}} else {
-            return nil;
-        }
-{{#vars}}{{^databaseIsRelation}}        
-        cd{{plainClassName}}.{{nameInCamelCase}} = {{nameInCamelCase}}{{/databaseIsRelation}}{{#databaseIsRelation}}{{#databaseRelationCreateLinkMethods}}{{#databaseRelationIsToManyReference}}
-        
-        cd{{plainClassName}}.{{databaseRelationPropertyName}} = {{databaseRelationModelType}}.classedObjects(for: {{name}}, in: context) 
-        if cd{{plainClassName}}.{{databaseRelationPropertyName}}?.count != {{name}}?.count {
-			print("Data integrity failure in {{plainClassName}}. Missing connections for {{name}}: \(String(describing: {{name}}))")
-		}{{/databaseRelationIsToManyReference}}{{^databaseRelationIsToManyReference}}
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#databaseShouldGenerateRelationLinks}}extension {{databaseModelName}} {
 
-        if let uuid = {{name}}, let object: {{databaseRelationModelType}} = {{databaseRelationModelType}}.classedObject(for: uuid, in: context)  {
-            cd{{plainClassName}}.{{databaseRelationPropertyName}} = object
-        } else {
-            print("******\nData integrity failure in {{plainClassName}}. The uuid \(String(describing: uuid)) for {{name}}  could not be found.\n***********")
-        }{{/databaseRelationIsToManyReference}}{{/databaseRelationCreateLinkMethods}}{{/databaseIsRelation}}{{/vars}}
-        return cd{{plainClassName}}
+    func updateRelationships(from model: {{plainClassName}}, in driver: NSManagedObjectContext) throws {
+        {{#vars}}{{#databasePropertyIsRelationship}}{{#databaseShouldGenerateRelationLinks}}{{^isNestedModelRelation}}{{#databaseToOneRelation}}
+        {{databaseRelationPropertyName}} = try driver.findObject(for: model.{{nameInCamelCase}}){{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        {{databaseRelationPropertyName}} = try Set(driver.findObjects(for: model.{{nameInCamelCase}})){{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{/databaseShouldGenerateRelationLinks}}{{/databasePropertyIsRelationship}}{{/vars}}{{#vars}}{{#databasePropertyIsRelationship}}{{#databaseShouldGenerateRelationLinks}}{{#isNestedModelRelation}}{{#databaseToOneRelation}}
+        {{databaseRelationPropertyName}} = try {{databaseRelationModelType}}.getOrMake(from: model.{{nameInCamelCase}}, in: driver){{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        {{databaseRelationPropertyName}} = try Set(model.{{nameInCamelCase}}{{^required}}?{{/required}}.map { try {{databaseRelationModelType}}.getOrMake(from: $0, in: driver) } {{^required}}?? []{{/required}}){{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{/databaseShouldGenerateRelationLinks}}{{/databasePropertyIsRelationship}}{{/vars}}
     }
 }
-
-{{/isProtocolUUIDType}}{{/isDatabaseModel}}{{/model}}{{/models}}
+{{/databaseShouldGenerateRelationLinks}}{{/isDatabaseModel}}{{/model}}{{/models}}

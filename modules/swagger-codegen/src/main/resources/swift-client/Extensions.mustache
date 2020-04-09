@@ -7,39 +7,6 @@
 import Foundation
 import CoreData
 
-extension NSEntityDescription {
-	static func insertTypedNewObject<T: NSManagedObject>(into context: NSManagedObjectContext) -> T? {
-		return NSEntityDescription.insertNewObject(forEntityName: String(describing: T.self), into: context) as? T
-	}
-}
-
-extension NSManagedObject {
-	static func getOrCreate(for uuid: String, in context: NSManagedObjectContext, with deletedOnServer: Bool) -> Self? {
-		return getOrCreateGenericItem(for: uuid, in: context, with: deletedOnServer)
-	}
-
-	private static func getOrCreateGenericItem<T: NSManagedObject>(for uuid: String, in context: NSManagedObjectContext, with deletedOnServer: Bool) -> T? {
-		if let existing: T = T.classedObject(for: uuid, in: context) {
-			return existing
-		} else if deletedOnServer {
-			return nil
-		}
-		else {
-			return NSEntityDescription.insertTypedNewObject(into: context)
-		}
-	}
-}
-
-private let dateFormatter: DateFormatter = {
-	return DateFormatter(with: "yyyy-MM-dd")
-}()
-
-private let testDateFormatter: DateFormatter = {
-	var aTestDateFormatter = DateFormatter(with: dateFormatter.dateFormat)
-	aTestDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-	return aTestDateFormatter
-}()
-
 func delay<T>(with item: T, delayAmount: Double = 0, closure: @escaping (T) -> () ) {
 	delay(amount: delayAmount) { closure(item) }
 }
@@ -55,13 +22,6 @@ func delay(amount: Double = 0, closure: @escaping () -> () ) {
 
 func doInBackground(closure: @escaping () -> Void) {
 	DispatchQueue.global().async(execute: closure)
-}
-
-extension DateFormatter {
-	convenience init(with dateFormat: String) {
-		self.init()
-		self.dateFormat = "yyyy-MM-dd"
-	}
 }
 
 extension Encodable {

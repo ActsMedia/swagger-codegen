@@ -32,9 +32,8 @@ extension {{plainClassName}} {
 
 
 {{#models}}{{#model}}{{#isDatabaseModel}}extension {{databaseModelName}} {
-    func update(from model: {{plainClassName}}) {
-{{#vars}}{{^databasePropertyIsRelationship}}        {{nameInCamelCase}} = model.{{nameInCamelCase}}
-        {{/databasePropertyIsRelationship}}{{/vars}}
+    func update(from model: {{plainClassName}}) { {{#vars}}{{^databasePropertyIsRelationship}}
+        {{nameInCamelCase}} = model.{{nameInCamelCase}}{{/databasePropertyIsRelationship}}{{/vars}}
     }
 }
 

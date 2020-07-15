@@ -78,6 +78,8 @@ io.swagger.codegen.languages.SwaggerGenerator
 io.swagger.codegen.languages.SwaggerYamlGenerator
 io.swagger.codegen.languages.SwiftSimpleCodegen
 io.swagger.codegen.languages.Swift4Codegen
+io.swagger.codegen.languages.SwiftClientGenerator
+io.swagger.codegen.languages.SwiftCoreDataCodegen
 io.swagger.codegen.languages.Swift3Codegen
 io.swagger.codegen.languages.SwiftCodegen
 io.swagger.codegen.languages.SymfonyServerCodegen

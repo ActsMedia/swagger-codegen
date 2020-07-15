@@ -27,24 +27,27 @@ public class DatabaseCodegenModel extends CodegenModel {
 
     // Whether this model should be built during database generation
     public Boolean isDatabaseModel; // x-database-model
-    public String databaseModelName; // x-database-model
+    // The Type name for the database model
+    public String databaseModelName; // x-database-model-name
+    // The Type name for the non-database model
     public String plainClassName;
 
     // Protocols
 
-    public Boolean isProtocolUUIDType; // x-protocol-uuid-type
-    public Boolean isProtocolSortOrderType; // x-protocol-sort-order-type
-    public Boolean isProtocolNameType; // x-protocol-name-type
+    // Indicates whether this model has a property that should be used as primary ID when linking/identifying instances of this Type
+    public Boolean databaseIsIdentifiable; // x-database-is-identifiable
+
+    // Indicates whether this model has database relationships that should be generated
+    public Boolean databaseShouldGenerateRelationLinks; // x-database-should-generate-relation-links
+
+    // Whether an adherence should be generated for SoftDeletable
     public Boolean isProtocolSoftDeletableType; // x-protocol-soft-deleteable-type
+
+    public Boolean useDefaultPropertyNames; // x-use-default-property-names
     
     //Testing 
 
     public Boolean isExcludedFromTests; //x-exclude-from-tests
-
-    //Other
-
-    // Builds a convenience initializer with required variables
-    public Boolean isInitRequired; // x-init-required
 
     public void processCustomProperties(boolean isDatabaseGeneration) {
         
@@ -66,16 +69,15 @@ public class DatabaseCodegenModel extends CodegenModel {
                 this.classname = this.databaseModelName;
             }
             //Protocols
-            this.isProtocolUUIDType = (Boolean) jsonData.get("x-protocol-uuid-type");
-            this.isProtocolSortOrderType = (Boolean) jsonData.get("x-protocol-sort-order-type");
-            this.isProtocolNameType = (Boolean) jsonData.get("x-protocol-name-type");
+            this.databaseIsIdentifiable = (Boolean) jsonData.get("x-database-is-identifiable");
+            this.databaseShouldGenerateRelationLinks = (Boolean) jsonData.get("x-database-should-generate-relation-links");
             this.isProtocolSoftDeletableType = (Boolean) jsonData.get("x-protocol-soft-deleteable-type");
 
             //Testing
             this.isExcludedFromTests = (Boolean) jsonData.get("x-exclude-from-tests");
 
             //Other
-            this.isInitRequired = (Boolean) jsonData.get("x-init-required");
+            this.useDefaultPropertyNames = (Boolean) jsonData.get("x-use-default-property-names");
             if(isDatabaseGeneration) {
                 imports.add("Infrastructure");
 

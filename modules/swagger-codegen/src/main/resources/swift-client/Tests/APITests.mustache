@@ -1,0 +1,196 @@
+//
+//  APITests.swift
+//  SwaggerTesting
+//
+//  Created by Paul Fechner on 3/8/17.
+//  Copyright © 2017 ActsMedia. All rights reserved.
+//
+import XCTest
+import CoreData
+import Quick
+import Nimble
+@testable import {{appName}}
+
+class MockAuthorizationGenericAPI: GenericAPI {
+
+	override class func genericCall<Body: JSONEncodable, Return: JSONDecodable>(requiresOauth: Bool = true, sendAsArray: Bool = false, headers: [String:String] = [:], url: URL, body: Body, success: @escaping (Return?) -> (), failure: @escaping (Error) -> ()) {
+
+		describe("Authorization") {
+			describe("Setup Propper Call") {
+				it("HasCorrectHeaders") {
+					expect(headers["Content-Type"]) == "application/json"
+				}
+				it("HasCorrectBody") {
+					let possibleTypedBody = body as? [String : String]
+					expect(possibleTypedBody).toNot(beNil())
+					guard let typedBody = possibleTypedBody else {
+						return
+					}
+					expect(typedBody["grant_type"]) == "password"
+					expect(typedBody["username"]) == "TestEmail"
+					expect(typedBody["password"]) == "TestPassword"
+					expect(typedBody["client_id"]) == "ClientID"
+					expect(typedBody["client_secret"]) == "ClientSecret"
+				}
+				it("HasCorrectParams") {
+					expect(sendAsArray) == false
+					expect(requiresOauth) == false
+					expect(url.path) == "BasePath/oauth/token"
+				}
+				it("success works propperly") {
+					expect(success((Oauth_info(with: true) as? Return)!)).to(postNotifications(equal([Notification(name:Notification.Name("TokenRefreshed"), object:nil)])))
+					expect(success((Oauth_info(with: false) as? Return)!)).to(postNotifications(equal([Notification(name:Notification.Name("TokenRefreshed"), object:nil)])))
+				}
+				it("failure works propperly") {
+					expect(failure(NetworkError.missingData)).to(postNotifications(equal([Notification(name:Notification.Name("TokenRefreshed"), object:nil)])))
+				}
+			}
+		}
+	}
+}
+
+class MockRefreshGenericAPI: GenericAPI {
+
+	override class func genericCall<Body: JSONEncodable, Return: JSONDecodable>(requiresOauth: Bool = true, sendAsArray: Bool = false, headers: [String:String] = [:], url: URL, body: Body, success: @escaping (Return?) -> (), failure: @escaping (Error) -> ()) {
+
+		describe("Setup Propper Call") {
+			it("HasCorrectHeaders") {
+				expect(headers["Content-Type"]) == "application/json"
+			}
+			it("HasCorrectBody") {
+				let possibleTypedBody = body as? [String : String]
+				expect(possibleTypedBody).toNot(beNil())
+				guard let typedBody = possibleTypedBody else {
+					return
+				}
+				expect(typedBody["grant_type"]) == "refresh_token"
+				expect(typedBody["refresh_token"]) == "password"
+			}
+			it("HasCorrectParams") {
+				expect(sendAsArray) == false
+				expect(requiresOauth) == false
+				expect(url.path) == "BasePath/oauth/token"
+			}
+			it("success works propperly") {
+				expect(success((Oauth_info(with: true) as? Return)!)).to(postNotifications(equal([Notification(name:Notification.Name("TokenRefreshed"), object:nil)])))
+				expect(success((Oauth_info(with: false) as? Return)!)).to(postNotifications(equal([Notification(name:Notification.Name("TokenRefreshed"), object:nil)])))
+			}
+			it("failure works propperly") {
+				expect(failure(NetworkError.missingData)).to(postNotifications(equal([Notification(name:Notification.Name("TokenRefreshed"), object:nil)])))
+			}
+		}
+	}
+}
+
+class APITests: QuickSpec {
+
+    override func spec() {
+		oauthTests()
+
+    }
+
+	func oauthTests() {
+		describe("OAuthAPI") {
+			describe("Authorization") {
+				describe("CorrectCase") {
+					AuthAPI.testingSetIsRefreshingToken(to: false)
+					let started = AuthAPI.authorizeAccount(genericAPIType: MockAuthorizationGenericAPI.self, networkType: MockNetwork.self, body: User.init(email: "TestEmail", password: "TestPassword"), success: { AuthAPI.processSuccess(info: $0, success: {_ in})}, failure: {AuthAPI.processFailure(error: $0, failure: {_ in})})
+					it("Started") {
+						expect(started) == true
+					}
+				}
+				describe("FailCase") {
+					AuthAPI.testingSetIsRefreshingToken(to: true)
+					let startedWhenRefreshing = AuthAPI.authorizeAccount(genericAPIType: MockAuthorizationGenericAPI.self, networkType: MockNetwork.self, body: User.init(email: "TestEmail", password: "TestPassword"), success: {AuthAPI.processSuccess(info: $0, success: {_ in})}, failure: {AuthAPI.processFailure(error: $0, failure: {_ in})})
+					it("didNotStartWhenRefreshing") {
+						expect(startedWhenRefreshing) == false
+					}
+				}
+			}
+
+			describe("Token Refresh") {
+				describe("CorrectCase") {
+					AuthAPI.testingSetIsRefreshingToken(to: false)
+					let started = AuthAPI.refreshToken(genericAPIType: MockRefreshGenericAPI.self, networkType: MockNetwork.self, success: {AuthAPI.processSuccess(info: $0, success: {_ in})}, failure: {AuthAPI.processFailure(error: $0, failure: {_ in})})
+					it("Started") {
+						expect(started) == true
+					}
+				}
+				describe("FailCase") {
+
+					AuthAPI.testingSetIsRefreshingToken(to: true)
+					let startedWhenRefreshing = AuthAPI.refreshToken(genericAPIType: MockRefreshGenericAPI.self, networkType: MockNetwork.self, success: {AuthAPI.processSuccess(info: $0, success: {_ in})}, failure: {AuthAPI.processFailure(error: $0, failure: {_ in})})
+
+					it("didNotStartWhenRefreshing") {
+						expect(startedWhenRefreshing) == false
+					}
+
+					AuthAPI.testingSetIsRefreshingToken(to: true)
+					let startedWhenNoRefresh = AuthAPI.refreshToken(genericAPIType: MockRefreshGenericAPI.self, networkType: MockNilNetwork.self, success: {AuthAPI.processSuccess(info: $0, success: {_ in})}, failure: {AuthAPI.processFailure(error: $0, failure: {_ in})})
+
+					it("didNotStartWhenRefreshing") {
+						expect(startedWhenNoRefresh) == false
+					}
+				}
+			}
+		}
+	}
+}
+
+fileprivate extension Oauth_info {
+
+	convenience init(with includeValues: Bool) {
+		self.init()
+		if includeValues {
+			self.access_token = "TestAccess"
+			self.refresh_token = "TestRefresh"
+		}
+	}
+}
+func doPositiveTest(for networkRequest: NetworkRequest) {
+	it("hasAllAttributes") {
+		expect(networkRequest.headers).notTo(beNil())
+		expect(networkRequest.parameters).notTo(beNil())
+	}
+}
+
+func doNegativeTest(for networkRequest: NetworkRequest) {
+	it("hasAllAttributes") {
+		expect(networkRequest.headers).to(beNil())
+		expect(networkRequest.parameters).to(beNil())
+	}
+}
+
+//func makePositiveTestModel() -> NetworkCall<[String], [String]> {
+////	NetworkCal
+//}
+
+struct MockNetworkRequest: NetworkRequest {
+
+	var headers: [String:String]?
+	var parameters: JSONEncodable?
+	var method: String
+	var url: URL
+	var requiresResponse: Bool
+	var failure: (Error) -> ()
+
+	//This should handle the result and decode it into the propper type
+	func handleResult(result: Any?) {
+
+	}
+}
+
+
+struct MockNetworkRequestor: NetworkRequestor {
+	var request: NetworkRequest
+	init(request networkRequest: NetworkRequest) {
+		self.request = networkRequest
+	}
+	func send() -> Bool {
+		return true
+	}
+
+	static func handleResponse(data: Data?, error: Error?, requiresResponse: Bool, success: (Any?) -> (), failure: (Error) -> ()) {
+		
+	}
+}

@@ -1,0 +1,54 @@
+// CoreDataBuilders.swift
+// API Version {{appVersion}}
+//
+// Generated code to implement the update/creation logic needed by the CoreData Models
+
+import Foundation
+import CoreData
+import EntityUtilities
+
+//MARK: - Protocol Declaration
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#databaseIsIdentifiable}}extension {{databaseModelName}}: ModelBuildingEntity & CoreDataEntity { typealias StorageDriver = NSManagedObjectContext }
+extension {{plainClassName}}: Identifiable { }
+{{/databaseIsIdentifiable}}{{^databaseIsIdentifiable}}extension {{databaseModelName}}: ModelUpdatable { }
+{{/databaseIsIdentifiable}}{{#databaseShouldGenerateRelationLinks}}extension {{databaseModelName}}: RelationalEntity { } 
+{{/databaseShouldGenerateRelationLinks}}{{/isDatabaseModel}}{{/model}}{{/models}}
+
+//MARK: - IdentifiableEntity Adherance
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#databaseIsIdentifiable}}extension {{databaseModelName}} {
+{{#vars}}{{#isIDProperty}}    var id: {{datatype}} { {{nameInCamelCase}} }
+    static var idPropertyName: String { "{{nameInCamelCase}}" }
+}
+extension {{plainClassName}} {
+    var id: {{datatype}} { {{nameInCamelCase}} }
+}
+
+{{/isIDProperty}}{{/vars}}{{/databaseIsIdentifiable}}{{/isDatabaseModel}}{{/model}}{{/models}}
+//MARK: - ModelUpdatable Implementations
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}extension {{databaseModelName}} {
+    func update(from model: {{plainClassName}}) { {{#vars}}{{^databasePropertyIsRelationship}}
+        {{nameInCamelCase}} = model.{{nameInCamelCase}}{{/databasePropertyIsRelationship}}{{/vars}}
+    }
+}
+
+{{/isDatabaseModel}}{{/model}}{{/models}}
+//MARK: - RelationalEntity Implementations
+
+
+{{#models}}{{#model}}{{#isDatabaseModel}}{{#databaseShouldGenerateRelationLinks}}extension {{databaseModelName}} {
+
+    func updateRelationships(from model: {{plainClassName}}, in driver: NSManagedObjectContext) throws {
+        {{#vars}}{{#databasePropertyIsRelationship}}{{#databaseShouldGenerateRelationLinks}}{{^isNestedModelRelation}}{{#databaseToOneRelation}}
+        {{databaseRelationPropertyName}} = try driver.findObject(for: model.{{nameInCamelCase}}){{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        {{databaseRelationPropertyName}} = try Set(driver.findObjects(for: model.{{nameInCamelCase}})){{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{/databaseShouldGenerateRelationLinks}}{{/databasePropertyIsRelationship}}{{/vars}}{{#vars}}{{#databasePropertyIsRelationship}}{{#databaseShouldGenerateRelationLinks}}{{#isNestedModelRelation}}{{#databaseToOneRelation}}
+        {{databaseRelationPropertyName}} = try {{databaseRelationModelType}}.getOrMake(from: model.{{nameInCamelCase}}, in: driver){{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        {{databaseRelationPropertyName}} = try Set(model.{{nameInCamelCase}}{{^required}}?{{/required}}.map { try {{databaseRelationModelType}}.getOrMake(from: $0, in: driver) } {{^required}}?? []{{/required}}){{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{/databaseShouldGenerateRelationLinks}}{{/databasePropertyIsRelationship}}{{/vars}}
+    }
+}
+{{/databaseShouldGenerateRelationLinks}}{{/isDatabaseModel}}{{/model}}{{/models}}

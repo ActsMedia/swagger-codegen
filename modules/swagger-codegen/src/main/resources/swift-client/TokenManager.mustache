@@ -1,0 +1,98 @@
+//
+//  TokenManager.swift
+//  Swagger Generated
+//  Copyright © 2017 ActsMedia. All rights reserved.
+
+// Note: Requires SSKeychain for Persistence
+
+import Foundation
+
+@objc protocol TokenManager {
+	static func set(password: String, in service: String, for account: String) -> Bool
+	static func password(in serviceName: String, for account: String) -> String?
+	static func deletePassword(in serviceName: String, for account: String) -> Bool
+}
+
+extension SSKeychain: TokenManager {
+
+	static func set(password: String, in service: String, for account: String) -> Bool {
+		return SSKeychain.setPassword(password, forService: service, account: account)
+	}
+
+	static func password(in serviceName: String, for account: String) -> String? {
+		return SSKeychain.password(forService: serviceName, account: account)
+	}
+
+	static func deletePassword(in serviceName: String, for account: String) -> Bool {
+		return SSKeychain.deletePassword(forService: serviceName, account: account)
+	}
+}
+
+class Token {
+
+	private static let sharedInstance: Token = Token()
+	var tokenManagerType: TokenManager.Type {
+		return SSKeychain.self
+	}
+
+    // MARK: - Exposed Variables
+
+    public static var header : String? {
+        get { return sharedInstance._header }
+        set { sharedInstance._header = newValue }
+    }
+    
+    open class var refresh : String? {
+        get { return sharedInstance._refresh }
+        set { sharedInstance._refresh = newValue }
+    }
+
+    public static func reset() {
+        header = nil
+        refresh = nil
+    }
+    
+    static func isReady() -> Bool {
+        // TODO: Add better checks later
+        return header != nil
+    }
+    
+    // MARK: - Private Methods/Variables
+    
+    private let service = "TokenService"
+    private let headerToken = "AccountNormalToken"
+    private let refreshToken = "RefreshToken"
+    
+    private func setToken(_ token: String?, account: String)
+    {
+        if let token = token {
+            saveToken(token, account: account)
+        }
+        else {
+            deleteToken(account)
+        }
+    }
+
+	private var _header : String? {
+		get { return getToken(headerToken) }
+		set { setToken(newValue, account: headerToken) }
+	}
+
+	private var _refresh : String? {
+		get { return getToken(refreshToken) }
+		set { setToken(newValue, account: refreshToken) }
+	}
+
+    private func saveToken(_ token: String, account: String) {
+		let success = tokenManagerType.set(password: token, in: service, for: account)
+        assert(success, "SSKeychain failed to save the token!")
+    }
+    
+    private func getToken(_ account: String) -> String? {
+        return tokenManagerType.password(in: service, for: account)
+    }
+    
+    private func deleteToken(_ account: String) {
+        _ = tokenManagerType.deletePassword(in: service, for: account)
+    }
+}

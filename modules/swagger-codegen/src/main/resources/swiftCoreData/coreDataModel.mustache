@@ -1,0 +1,33 @@
+{{#models}}{{#model}}{{#isDatabaseModel}}
+//Is database model
+import Foundation
+import CoreData
+
+
+//
+// -------------- {{databaseModelName}} --------------
+//
+
+@objc({{databaseModelName}})
+final class {{databaseModelName}}: NSManagedObject {
+{{#vars}}
+    /**{{description}}**/
+{{^databasePropertyIsRelationship}}{{#isPrimitiveType}}    var {{nameInCamelCase}}: {{datatype}}{{^required}}?{{/required}}{{#required}}!{{/required}} {
+        // Getters and setters required to make it possible to have optional primitive types.
+        get {
+            willAccessValue(forKey: "{{nameInCamelCase}}")
+            let value = primitiveValue(forKey: "{{nameInCamelCase}}") as? {{datatype}}
+            didAccessValue(forKey: "{{nameInCamelCase}}")
+            return value
+        }
+        set {
+            willChangeValue(forKey: "{{nameInCamelCase}}")
+            let value: {{datatype}}? = newValue ?? nil
+            setPrimitiveValue(value, forKey: "{{nameInCamelCase}}")
+            didChangeValue(forKey: "{{nameInCamelCase}}")
+        }
+    }
+{{/isPrimitiveType}}{{^isPrimitiveType}}    @NSManaged var {{nameInCamelCase}}: {{datatype}}{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/isPrimitiveType}}{{/databasePropertyIsRelationship}}{{#databaseToOneRelation}}    @NSManaged var {{databaseRelationPropertyName}}: {{databaseRelationModelType}}{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}    @NSManaged var {{databaseRelationPropertyName}}: Set<{{databaseRelationModelType}}>{{^required}}?{{/required}}{{#required}}!{{/required}}
+{{/databasePropertyIsToManyRelationship}}{{/vars}}}{{/isDatabaseModel}}{{/model}}{{/models}}

@@ -1,0 +1,20 @@
+// CoreDataToSwaggerBuilders.swift
+// API Version {{appVersion}}
+//
+
+import Foundation
+import EntityUtilities
+
+//MARK: - TypeInitable adherance
+{{#models}}{{#model}}{{#isDatabaseModel}}extension {{plainClassName}}: TypeInitable {
+
+    init(with model: {{databaseModelName}}) {
+        {{#vars}}{{^databasePropertyIsRelationship}}
+        self.{{nameInCamelCase}} = model.{{nameInCamelCase}}{{/databasePropertyIsRelationship}}{{/vars}}{{#databaseIsIdentifiable}}{{#vars}}{{#databaseShouldGenerateRelationLinks}}{{^isNestedModelRelation}}{{#databaseToOneRelation}}
+        self.{{nameInCamelCase}} = model.{{databaseRelationPropertyName}}{{^required}}?{{/required}}.id{{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        self.{{nameInCamelCase}} = model.{{databaseRelationPropertyName}}{{^required}}?{{/required}}.compactMap{$0.id}{{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{#isNestedModelRelation}}{{#databaseToOneRelation}}
+        self.{{nameInCamelCase}} = {{datatype}}(with: model.{{databaseRelationPropertyName}}){{/databaseToOneRelation}}{{#databasePropertyIsToManyRelationship}}
+        self.{{nameInCamelCase}} = model.{{databaseRelationPropertyName}}{{^required}}?{{/required}}.compactMap { .init(with: $0) }{{/databasePropertyIsToManyRelationship}}{{/isNestedModelRelation}}{{/databaseShouldGenerateRelationLinks}}{{/vars}}{{/databaseIsIdentifiable}}
+    }
+}
+{{/isDatabaseModel}}{{/model}}{{/models}}

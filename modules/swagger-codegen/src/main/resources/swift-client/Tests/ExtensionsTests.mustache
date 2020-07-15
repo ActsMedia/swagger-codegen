@@ -1,0 +1,177 @@
+//
+//  ExtensionsTests.swift
+//  SwaggerTesting
+//
+//  Created by Paul Fechner on 3/8/17.
+//  Copyright © 2017 ActsMedia. All rights reserved.
+//
+
+import XCTest
+import CoreData
+import Quick
+import Nimble
+@testable import {{appName}}_Debug
+
+class MockTokenManager: TokenManager {
+
+	private static var password: String? = nil
+	private static var service: String? = nil
+	private static var account: String? = nil
+
+	static func set(password: String, in service: String, for account: String) -> Bool {
+		self.password = password
+		self.service = service
+		self.account = account
+		return true
+	}
+
+	static func password(in serviceName: String, for account: String) -> String? {
+		guard self.service == serviceName, self.account == account, let password = self.password else {
+			return nil
+		}
+		return password
+	}
+
+	static func deletePassword(in serviceName: String, for account: String) -> Bool {
+		guard self.service == serviceName, self.account == account else{
+			return false
+		}
+		reset()
+		return true
+	}
+
+	static func reset(){
+		password = nil
+		service = nil
+		account = nil
+	}
+}
+
+class MockToken: Token {
+
+	override var tokenManagerType: TokenManager.Type {
+		return MockTokenManager.self
+	}
+
+	override class var refresh : String? {
+		get { return "password" }
+		set { }
+	}
+}
+
+class MockNilToken: Token {
+
+	override var tokenManagerType: TokenManager.Type {
+		return MockTokenManager.self
+	}
+
+	override class var refresh : String? {
+		get { return nil }
+		set { }
+	}
+}
+
+class MockInfoProvider: SwaggerAPIInfoProvider {
+	static var mainAPIPath: String = "MainAPIPath"
+	static var basePath: String  = "BasePath"
+
+	static var clientID: String = "ClientID"
+	static var clientSecret: String = "ClientSecret"
+}
+
+class MockNetwork: Network {
+	override class var apiProvider: SwaggerAPIInfoProvider.Type {
+		return MockInfoProvider.self
+	}
+
+	override class func refreshBody(with tokenType: Token.Type = Token.self) -> [String : String]? {
+		return super.refreshBody(with: MockToken.self)
+	}
+}
+
+class MockNilNetwork: Network {
+	override class var apiProvider: SwaggerAPIInfoProvider.Type {
+		return MockInfoProvider.self
+	}
+
+	override class func refreshBody(with tokenType: Token.Type = Token.self) -> [String : String]? {
+		return super.refreshBody(with: MockNilToken.self)
+	}
+}
+
+class ExtensionTests: QuickSpec {
+
+	//Jan 01, 1970, 00:00 when TimeZone == GMT
+	let testDate = Date(timeIntervalSince1970: 0)
+
+	override func spec() {
+
+		describe("Extensions") {
+			describe("JSONEncodable") {
+				it("Converts correctly") {
+					expect(true.encodeToJSON() as? Bool).to(beTruthy(), description: "Bool")
+					expect(Float(42.42).encodeToJSON() as? Float).to(beCloseTo(42.42, within: 0.01), description: "Float")
+					expect(Int(42).encodeToJSON() as? Int).to(equal(42), description: "Int")
+					expect(Double(42.42).encodeToJSON() as? Double).to(beCloseTo(42.42, within: 0.01), description: "Double")
+					expect("42".encodeToJSON() as? String).to(equal("42"), description: "String")
+
+					let testArray = ["Test", "Object"].encodeToJSON() as? [String]
+					expect(testArray).toNot(beNil())
+					if let testArray = testArray {
+						expect(testArray).to(equal(["Test", "Object"]), description: "Array")
+					}
+
+					let testDictionary = ["Test" : "Test", "Object" : "Object"].encodeToJSON() as? [String : String]
+					expect(testDictionary).toNot(beNil())
+					if let testDictionary = testDictionary {
+						expect(testDictionary).to(equal(["Test" : "Test", "Object" : "Object"]), description: "Dictionary")
+					}
+					expect(self.testDate.encodeToJSON(with: true) as? String).to(equal("1970-01-01"), description: "Date")
+				}
+			}
+		}
+		describe("TokenManager") {
+			it("Accesses correctly") {
+				MockToken.header = "Header"
+				expect(MockToken.header).to(equal("Header"))
+				expect(MockToken.isReady()).to(equal(true), description: "Is Ready evaluated propperly.")
+				MockToken.reset()
+
+				MockToken.refresh = "Refresh"
+				expect(MockToken.refresh).to(equal("password"))
+				MockToken.reset()
+			}
+		}
+		describe("NetworkHelper") {
+
+			it("Makes correct URLs") {
+				expect(MockNetwork.url(for: "TestEndpoint", versioned: false).absoluteString) == "BasePathTestEndpoint"
+				expect(MockNetwork.url(for: "TestEndpoint", versioned: true).absoluteString) == "MainAPIPathTestEndpoint"
+			}
+			it("MakesCorrectHeaders") {
+				MockToken.header = "Header"
+				let auth = MockNetwork.Header.auth(with: MockToken.self)
+				expect(auth) != nil
+				if let auth = auth {
+					expect(auth["Authorization"]) == "Bearer Header"
+					print("auth")
+				}
+
+				let standardAuth = MockNetwork.Header.makeStandardIncludeAuth(with: MockToken.self)
+				expect(standardAuth) != nil
+				if let standardAuth = standardAuth {
+					expect(standardAuth["Content-Type"]) == "application/json"
+					expect(standardAuth["Authorization"]) == "Bearer Header"
+				}
+			}
+			it("Fails without Token") {
+				MockToken.reset()
+				let auth = MockNetwork.Header.auth(with: MockToken.self)
+				expect(auth).to(beNil())
+
+				let standardAuth = MockNetwork.Header.makeStandardIncludeAuth(with: MockToken.self)
+				expect(standardAuth).to(beNil())
+			}
+		}
+	}
+}

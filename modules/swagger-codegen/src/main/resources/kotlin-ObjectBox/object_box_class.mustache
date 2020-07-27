@@ -13,21 +13,21 @@ class {{databaseModelName}} (
     {{/-last}}{{/requiredVars}}{{#hasRequired}}{{#hasOptional}},
     {{/hasOptional}}{{/hasRequired}}{{#optionalVars}}{{#isListContainer}}{{#items}}{{#isString}}@Convert(converter = StringListConverter::class, dbType = String::class)
     {{/isString}}{{/items}}{{/isListContainer}}{{>data_class_opt_var}}{{^-last}},
-    {{/-last}}{{/optionalVars}}{{#vars}}{{#databaseIsRelation}}{{^databaseRelationIsToManyReference}}{{^databaseRelationIsManyToManyReference}},
-    var {{databaseRelationPropertyName}}Id: Long = 0{{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}},
+    {{/-last}}{{/optionalVars}}{{#vars}}{{#databaseToOneRelation}},
+    var {{databaseRelationPropertyName}}Id: Long = 0{{/databaseToOneRelation}}{{/vars}},
     @Id var id: Long = 0): Serializable, Parcelable{{#isProtocolUUIDType}}, UUIDEntity(uuid){{/isProtocolUUIDType}}{{#isProtocolSoftDeletableType}}, SoftDeletable{{/isProtocolSoftDeletableType}} {
     
-    {{#vars}}{{#databaseIsRelation}}{{#databaseRelationIsToManyReference}}
+    {{#vars}}{{#databaseToManyRelation}}
     @IgnoredOnParcel
     @Backlink(to = "{{databaseRelationForeignPropertyName}}")
     lateinit var {{databaseRelationPropertyName}}: ToMany<{{databaseRelationModelType}}>
-    {{/databaseRelationIsToManyReference}}{{#databaseRelationIsManyToManyReference}}
+    {{/databaseToManyRelation}}{{#databaseManyToManyRelation}}
     @IgnoredOnParcel
     lateinit var {{databaseRelationPropertyName}}: ToMany<{{databaseRelationModelType}}>
-    {{/databaseRelationIsManyToManyReference}}{{^databaseRelationIsToManyReference}}{{^databaseRelationIsManyToManyReference}}
+    {{/databaseManyToManyRelation}}{{#databaseToOneRelation}}
     @IgnoredOnParcel
     lateinit var {{databaseRelationPropertyName}}: ToOne<{{databaseRelationModelType}}>
-    {{/databaseRelationIsManyToManyReference}}{{/databaseRelationIsToManyReference}}{{/databaseIsRelation}}{{/vars}}
+    {{/databaseToOneRelation}}{{/vars}}
 
     // This allows us to add static extensions to the class
     companion object

@@ -33,6 +33,7 @@ public abstract class AbstractKotlinCodegen extends DefaultCodegen implements Co
 
     public AbstractKotlinCodegen() {
         super();
+        processOpts();
         supportsInheritance = true;
 
         languageSpecificPrimitives = new HashSet<String>(Arrays.asList(
@@ -301,12 +302,15 @@ public abstract class AbstractKotlinCodegen extends DefaultCodegen implements Co
         }
 
         if (additionalProperties.containsKey(CodegenConstants.PACKAGE_NAME)) {
+            
             this.setPackageName((String) additionalProperties.get(CodegenConstants.PACKAGE_NAME));
+            System.out.println("*\n*\n*\n*\n*\nFound PackageName: " + this.packageName);
             if (!additionalProperties.containsKey(CodegenConstants.MODEL_PACKAGE))
                 this.setModelPackage(packageName + ".models");
             if (!additionalProperties.containsKey(CodegenConstants.API_PACKAGE))
                 this.setApiPackage(packageName + ".apis");
         } else {
+            System.out.println("*\\n*\n*\n*\n*\n*\nDid not find package");
             additionalProperties.put(CodegenConstants.PACKAGE_NAME, packageName);
         }
 
@@ -535,7 +539,13 @@ public abstract class AbstractKotlinCodegen extends DefaultCodegen implements Co
     @Override
     protected boolean needToImport(String type) {
         // provides extra protection against improperly trying to import language primitives and java types
-        boolean imports = !type.startsWith("kotlin.") && !type.startsWith("java.") && !defaultIncludes.contains(type) && !languageSpecificPrimitives.contains(type);
+        if(type == null) {
+            return false;
+        }
+        boolean imports = !type.startsWith("kotlin.") 
+                && !type.startsWith("java.") 
+                && !defaultIncludes.contains(type) 
+                && !languageSpecificPrimitives.contains(type);
         return imports;
     }
 }

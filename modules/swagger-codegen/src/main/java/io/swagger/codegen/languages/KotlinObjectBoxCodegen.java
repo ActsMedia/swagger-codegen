@@ -50,7 +50,7 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
         super();
 
         artifactId = "kotlin-ObjectBox";
-        packageName = "io.swagger.client";
+        // packageName = "io.swagger.client";
 
         outputFolder = "generated-code" + File.separator + "kotlin-ObjectBox";
         modelTemplateFiles.put("model.mustache", ".kt");
@@ -116,29 +116,30 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
     public void processOpts() {
         super.processOpts();
 
-        if (additionalProperties.containsKey(CodegenConstants.INVOKER_PACKAGE)) {
-            this.invokerPackage = (String) additionalProperties.get(CodegenConstants.INVOKER_PACKAGE);
-            additionalProperties.put(CodegenConstants.INVOKER_PACKAGE, invokerPackage);
-            packageName = invokerPackage + ".swagger.database";
-            additionalProperties.put(CodegenConstants.PACKAGE_NAME, packageName);
-            additionalProperties.put(CodegenConstants.MODEL_PACKAGE, packageName + ".models");
-            modelPackage = packageName + ".models";
-            additionalProperties.put(CodegenConstants.API_PACKAGE, packageName + ".api");
-            apiPackage = packageName + ".api";
-            importMapping.put("Infrastructure", packageName + ".infrastructure.*");
-        } 
+        this.invokerPackage = deriveInvokerPackageName(modelPackage);
+        // if (additionalProperties.containsKey(CodegenConstants.INVOKER_PACKAGE)) {
+        //     this.invokerPackage = (String) additionalProperties.get(CodegenConstants.INVOKER_PACKAGE);
+            additionalProperties.put(CodegenConstants.INVOKER_PACKAGE, this.invokerPackage);
+        //     packageName = invokerPackage + ".swagger.database";
+        //     additionalProperties.put(CodegenConstants.PACKAGE_NAME, packageName);
+        //     additionalProperties.put(CodegenConstants.MODEL_PACKAGE, packageName + ".models");
+        //     modelPackage = packageName + ".models";
+        //     additionalProperties.put(CodegenConstants.API_PACKAGE, packageName + ".api");
+        //     apiPackage = packageName + ".api";
+            importMapping.put("Infrastructure", this.invokerPackage + ".infrastructure.*");
+        // } 
 
-        if (!additionalProperties.containsKey(CodegenConstants.MODEL_PACKAGE)) {
-            additionalProperties.put(CodegenConstants.MODEL_PACKAGE, modelPackage);
-        }
+        // if (!additionalProperties.containsKey(CodegenConstants.MODEL_PACKAGE)) {
+        //     additionalProperties.put(CodegenConstants.MODEL_PACKAGE, modelPackage);
+        // }
 
-        if (!additionalProperties.containsKey(CodegenConstants.API_PACKAGE)) {
-            additionalProperties.put(CodegenConstants.API_PACKAGE, apiPackage);
-        }
+        // if (!additionalProperties.containsKey(CodegenConstants.API_PACKAGE)) {
+        //     additionalProperties.put(CodegenConstants.API_PACKAGE, apiPackage);
+        // }
 
-        if (additionalProperties.containsKey(DATE_LIBRARY)) {
-            setDateLibrary(additionalProperties.get(DATE_LIBRARY).toString());
-        }
+        // if (additionalProperties.containsKey(DATE_LIBRARY)) {
+        //     setDateLibrary(additionalProperties.get(DATE_LIBRARY).toString());
+        // }
 
         if (DateLibrary.THREETENBP.value.equals(dateLibrary)) {
             additionalProperties.put(DateLibrary.THREETENBP.value, true);
@@ -156,10 +157,10 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
             additionalProperties.put(DateLibrary.JAVA8.value, true);
         }
 
-        final String infrastructureFolder = (sourceFolder + File.separator + packageName + File.separator + "infrastructure").replace(".", "/");
+        final String infrastructureFolder = (sourceFolder + File.separator + invokerPackage + File.separator + "infrastructure").replace(".", "/");
 
         supportingFiles.add(new SupportingFile("infrastructure/EntityExtensions.kt.mustache", infrastructureFolder, "EntityExtensions.kt"));
-        supportingFiles.add(new SupportingFile("infrastructure/BoxCore.kt.mustache", infrastructureFolder, "BoxCore.kt"));
+        // supportingFiles.add(new SupportingFile("infrastructure/BoxCore.kt.mustache", infrastructureFolder, "BoxCore.kt"));
         supportingFiles.add(new SupportingFile("infrastructure/UUIDEntity.kt.mustache", infrastructureFolder, "UUIDEntity.kt"));
         supportingFiles.add(new SupportingFile("infrastructure/SoftDeletable.kt.mustache", infrastructureFolder, "SoftDeletable.kt"));
         supportingFiles.add(new SupportingFile("infrastructure/StringListConverter.kt.mustache", infrastructureFolder, "StringListConverter.kt"));
@@ -222,9 +223,12 @@ public class KotlinObjectBoxCodegen extends AbstractKotlinCodegen {
             for (Map<String, Object> mo : models) {
                 try {
                     CodegenModel cm = (CodegenModel) mo.get("model");
-                    if(cm instanceof DatabaseCodegenModel && ((DatabaseCodegenModel) cm).isDatabaseModel) {
-                        System.out.println("Found database model for model: " + cm.name);
-                        newModels.add(mo);
+                    if(cm instanceof DatabaseCodegenModel) {
+                        DatabaseCodegenModel model = (DatabaseCodegenModel) cm;
+                        if(model.isDatabaseModel != null && model.isDatabaseModel) {
+                            System.out.println("Found database model for model: " + cm.name);
+                            newModels.add(mo);
+                        }
                     }
                 }catch(java.lang.NullPointerException e) {
                     e.printStackTrace();

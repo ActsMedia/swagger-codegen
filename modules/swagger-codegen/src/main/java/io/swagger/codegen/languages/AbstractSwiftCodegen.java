@@ -487,9 +487,9 @@ abstract public class AbstractSwiftCodegen extends DefaultCodegen implements Cod
         // name = camelize(name, true);
 
         // for reserved word or word starting with number, append _
-        // if (isReservedWord(name) || name.matches("^\\d.*")) {
-        //     name = escapeReservedWord(name);
-        // }
+        if (isReservedWord(name) || name.matches("^\\d.*")) {
+            name = escapeReservedWord(name);
+        }
 
         return name;
     }
@@ -712,6 +712,17 @@ abstract public class AbstractSwiftCodegen extends DefaultCodegen implements Cod
     public void postProcessModelProperty(CodegenModel model, CodegenProperty property) {
         super.postProcessModelProperty(model, property);
 
+        System.out.println("Post processing property: " + property.name + " camel: " + property.nameInCamelCase);
+        if (isReservedWord(property.name) || property.name.matches("^\\d.*")) {
+            System.out.println("Found a reserved name");
+            property.name = escapeReservedWord(property.name);
+        }
+        if (isReservedWord(property.nameInCamelCase) || property.nameInCamelCase.matches("^\\d.*")) {
+            System.out.println("Found a reserved camel cased name: "+ property.nameInCamelCase);
+            property.nameInCamelCase = escapeReservedWord(property.nameInCamelCase);
+            System.out.println("New name: "+ property.nameInCamelCase);
+        }
+        
         // The default template code has the following logic for
         // assigning a type as Swift Optional:
         //

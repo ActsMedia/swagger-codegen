@@ -59,6 +59,7 @@ public class SwiftCoreDataCodegen extends AbstractSwiftCodegen implements Codege
      */
     public SwiftCoreDataCodegen() {
         super();
+        this.reservedWords.add("isDeleted");
         outputFolder = "generated-code" + File.separator + "swift";
         modelTemplateFiles.put("coreDataModel.mustache", ".swift");
         embeddedTemplateDir = templateDir = "swiftCoreData";
@@ -110,10 +111,12 @@ public class SwiftCoreDataCodegen extends AbstractSwiftCodegen implements Codege
     //Overridden to post-process any model properties.
     @Override
     public void postProcessModel(CodegenModel model){
+
         if (model == null || !(model instanceof DatabaseCodegenModel)) {
             return;
         }
         DatabaseCodegenModel typedModel = (DatabaseCodegenModel) model;
+        
         typedModel.processCustomProperties(true);
     }
 

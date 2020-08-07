@@ -58,6 +58,7 @@ public class SwiftClientGenerator extends AbstractSwiftCodegen implements Codege
      */
     public SwiftClientGenerator() {
         super();
+        this.reservedWords.add("isDeleted");
         sourceFolder = "Swagger";
         outputFolder = "generated-code" + File.separator + "swift";
         modelTemplateFiles.put("model.mustache", ".swift");

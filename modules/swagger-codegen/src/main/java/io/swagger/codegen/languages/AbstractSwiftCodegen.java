@@ -136,9 +136,6 @@ abstract public class AbstractSwiftCodegen extends DefaultCodegen implements Cod
                     // name used by swift client
                     "ErrorResponse", "Response",
 
-                    // Added for Objective-C compatibility
-                    "id", "description", "NSArray", "NSURL", "CGFloat", "NSSet", "NSString", "NSInteger", "NSUInteger",
-                    "NSError", "NSDictionary", 
 
                     //
                     // Swift keywords. This list is taken from here:

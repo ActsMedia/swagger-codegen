@@ -60,6 +60,18 @@ public class SwiftCoreDataCodegen extends AbstractSwiftCodegen implements Codege
     public SwiftCoreDataCodegen() {
         super();
         this.reservedWords.add("isDeleted");
+        this.reservedWords.add("id");
+        this.reservedWords.add("description");
+        this.reservedWords.add("NSArray");
+        this.reservedWords.add("NSURL");
+        this.reservedWords.add("CGFloat");
+        this.reservedWords.add("NSSet");
+        this.reservedWords.add("NSString");
+        this.reservedWords.add("NSInteger");
+        this.reservedWords.add("NSUInteger");
+        this.reservedWords.add("NSError");
+        this.reservedWords.add("NSDictionary");
+        
         outputFolder = "generated-code" + File.separator + "swift";
         modelTemplateFiles.put("coreDataModel.mustache", ".swift");
         embeddedTemplateDir = templateDir = "swiftCoreData";

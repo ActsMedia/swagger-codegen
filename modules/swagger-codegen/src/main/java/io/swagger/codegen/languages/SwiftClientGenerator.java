@@ -73,6 +73,7 @@ public class SwiftClientGenerator extends AbstractSwiftCodegen implements Codege
     public void postProcessModelProperty(CodegenModel model, CodegenProperty property){
         super.postProcessModelProperty(model, property);
 
+        // Handling interaction with Database Codegen
         if (property == null || !(property instanceof DatabaseCodegenProperty)) {
             return;
         }
@@ -84,12 +85,12 @@ public class SwiftClientGenerator extends AbstractSwiftCodegen implements Codege
     public void processOpts() {
         super.processOpts();
 
-        String infrastructureFolderPath = sourceFolder+ File.separator + "Infrastructure";
-        supportingFiles.add(new SupportingFile("Extensions.mustache", infrastructureFolderPath, "Extensions.swift"));
-        supportingFiles.add(new SupportingFile("NetworkCall.mustache", infrastructureFolderPath, "NetworkCall.swift"));
-        supportingFiles.add(new SupportingFile("NetworkHelper.mustache", infrastructureFolderPath, "NetworkHelper.swift"));
-        supportingFiles.add(new SupportingFile("NetworkRequestor.mustache", infrastructureFolderPath, "NetworkRequestor.swift"));
-        supportingFiles.add(new SupportingFile("OAuthAPI.mustache", infrastructureFolderPath, "OAuthAPI.swift"));
-        supportingFiles.add(new SupportingFile("TokenManager.mustache", infrastructureFolderPath, "TokenManager.swift"));
+        // String infrastructureFolderPath = sourceFolder+ File.separator + "Infrastructure";
+        // supportingFiles.add(new SupportingFile("Extensions.mustache", infrastructureFolderPath, "Extensions.swift"));
+        // supportingFiles.add(new SupportingFile("NetworkCall.mustache", infrastructureFolderPath, "NetworkCall.swift"));
+        // supportingFiles.add(new SupportingFile("NetworkHelper.mustache", infrastructureFolderPath, "NetworkHelper.swift"));
+        // supportingFiles.add(new SupportingFile("NetworkRequestor.mustache", infrastructureFolderPath, "NetworkRequestor.swift"));
+        // supportingFiles.add(new SupportingFile("OAuthAPI.mustache", infrastructureFolderPath, "OAuthAPI.swift"));
+        // supportingFiles.add(new SupportingFile("TokenManager.mustache", infrastructureFolderPath, "TokenManager.swift"));
     }
 }

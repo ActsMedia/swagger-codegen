@@ -3,7 +3,9 @@
 // API Version {{appVersion}}
 //
 
-class {{classname}} {
+import AMNetworkingStack
+
+class {{classname}}<Provider: NetworkingProvider> {
 {{#operation}}
 
     /**{{#summary}}
@@ -17,11 +19,13 @@ class {{classname}} {
      - parameter: {{paramName}}: (type: {{#isFormParam}}form{{/isFormParam}}{{#isQueryParam}}query{{/isQueryParam}}{{#isPathParam}}path{{/isPathParam}}{{#isHeaderParam}}header{{/isHeaderParam}}{{#isBodyParam}}body{{/isBodyParam}}) {{description}}{{/allParams}}{{/hasParams}}
      - returns: NetworkResult<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Void{{/returnType}}> {{description}}
      */
-    static func {{operationId}}(genericAPIType: GenericAPI.Type = GenericAPI.self, with {{#hasParams}}{{#allParams}}{{paramName}}{{#secondaryParam}}{{paramName}}{{/secondaryParam}}: {{{dataType}}}{{^required}}?{{/required}}{{#hasMore}}, {{/hasMore}}{{/allParams}}, {{/hasParams}}success: @escaping ({{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Void {{/returnType}}?) -> (), failure: @escaping (Error) -> ()) {
+    static func {{operationId}}(provider: Provider = .shared, with {{#hasParams}}{{#allParams}}{{paramName}}{{#secondaryParam}}{{paramName}}{{/secondaryParam}}: {{{dataType}}}{{^required}}?{{/required}}{{#hasMore}}, {{/hasMore}}{{/allParams}}, {{/hasParams}}completion: @escaping (Result<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Void {{/returnType}}, Error>) -> ()) {
         {{^pathParams}}let{{/pathParams}}{{#pathParams}}{{^secondaryParam}}var{{/secondaryParam}}{{/pathParams}} path = "{{path}}"{{#pathParams}}
-	    path = path.stringByReplacingOccurrencesOfString("{{=<% %>=}}{<%paramName%>}<%={{ }}=%>", withString: "\({{paramName}})", options: .LiteralSearch, range: nil){{/pathParams}}
-		
-		genericAPIType.genericCall({{#authMethods}}{{^isOAuth}}requiresOauth: false, headers: Network.Header.json, {{/isOAuth}}{{/authMethods}}path: path, body: body, success: success, failure: failure)
+        path = path.replacingOccurrences(of: "{{=<% %>=}}{<%paramName%>}<%={{ }}=%>", with: "\({{paramName}})", options: .literal){{/pathParams}}
+        
+        {{#hasBodyParam}}provider.enqueueRequest(urlExtension: path, body: {{#bodyParam}}{{paramName}}{{/bodyParam}} ,method: .fuzzyMake(from: "{{httpMethod}}") , completion: completion)
+        {{/hasBodyParam}}{{^hasBodyParam}}provider.enqueueRequest(urlExtension: path, method: .fuzzyMake(from: "{{httpMethod}}") , completion: completion)
+        {{/hasBodyParam}}
     }
 {{/operation}}
 }
